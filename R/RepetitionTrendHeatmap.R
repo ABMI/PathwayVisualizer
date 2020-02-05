@@ -1,6 +1,6 @@
 # Copyright 2020 Observational Health Data Sciences and Informatics
 #
-# This file is part of treatmentCycleVisualization
+# This file is part of PathwayVisualizer
 #
 # Licensed under the Apache License, Version 2.0 (the "License");
 # you may not use this file except in compliance with the License.
@@ -15,18 +15,17 @@
 # limitations under the License.
 #' Heatmap
 #' Trends in regimen heatmap
-#' @param episodeTableFromDatabase
-#' @param visualizationTargetRegimenId
-#' @param heatmapInRatio
+#' @param standardData
+#' @param targetId
+#' @param connectionDetails
+#' @param resultDatabaseSchema
+#' @param cohortTable
+#' @param targetCohortIds
+#' @param cohortName
+#' @param gapDate
+#' @param heatmapPlotData
 #' @param maximumCycleNumber
 #' @param colors
-#' @param connectionDetails
-#' @param vocaDatabaseSchema
-#' @param oncologyDatabaseSchema
-#' @param episodeTable
-#' @param plotData
-#' @param episodeSourceConceptId
-#' @param targetEpisodeConceptId
 #' @keywords heatmap
 #' @return repitition trend heatmap
 #' @examples 
@@ -36,108 +35,90 @@
 #' @import tidyr
 #' @import RColorBrewer
 #' @export distributionTable
-episodeTableForVisualization <- function(connectionDetails,
-                                         vocaDatabaseSchema,
-                                         oncologyDatabaseSchema,
-                                         episodeTable){
-  connection <- DatabaseConnector::connect(connectionDetails)
-  sql <- 'select episode.*,concept.concept_name from @oncology_database_schema.@episode_table episode
-  left join @voca_database_schema.concept concept
-  on episode.episode_source_concept_id = concept.concept_id
-  where episode_concept_id in (32532) 
-  '
-  sql <- SqlRender::render(sql,voca_database_schema = vocaDatabaseSchema,
-                           oncology_database_schema = oncologyDatabaseSchema,
-                           episode_table = episodeTable)
-  sql <- SqlRender::translate(sql, targetDialect = connectionDetails$dbms)
-  result <- DatabaseConnector::querySql(connection, sql)
-  colnames(result) <- SqlRender::snakeCaseToCamelCase(colnames(result))
-  DatabaseConnector::disconnect(connection)
-  return(result)
-}
-
-distributionTable <- function(episodeTable,
-                              targetEpisodeConceptId){
-  episode <- episodeTable %>% filter(episodeSourceConceptId == targetEpisodeConceptId)
-  maxCycleNumberPerPerson<-aggregate(episode$episodeNumber,by = list(episode$personId), max)
-  colnames(maxCycleNumberPerPerson) <- c('person_id','Cycle_num')
+distributionTable <- function(standardData,
+                              targetId){
+  targetStandardData <- standardData %>% subset(cohortDefinitionId == targetId)
+  maxCycle<-aggregate(targetStandardData$cycle,by = list(targetStandardData$subjectId), max)
+  colnames(maxCycle) <- c('person_id','Cycle_num')
   
   # Total count
-  totalCount<-length(unique(maxCycleNumberPerPerson$personId))
+  totalCount<-length(unique(maxCycle$personId))
   
   # Count the number of patients in the value of each cycle number
-  countCycle<-as.data.frame(maxCycleNumberPerPerson %>% group_by(Cycle_num) %>% summarise(n = n()))
-  countCycle$'%'<-round(prop.table(table(maxCycleNumberPerPerson$Cycle_num))*100, digits = 1)
-  sum<- sum(countCycle$n)
+  distribution<-as.data.frame(maxCycle %>% group_by(Cycle_num) %>% summarise(n = n()))
+  distribution$'%'<-round(prop.table(table(maxCycle$Cycle_num))*100, digits = 1)
+  sum<- sum(distribution$n)
   sumName<- paste0('N','(','total=',sum,')')
-  countCycle$conceptName <- unique(episode$conceptName)
-  names(countCycle) <- c('Treatment cycle',sumName,'%','conceptName')
-  return(countCycle)}
+  distribution$conceptName <- unique(targetStandardData$cohortName)
+  names(distribution) <- c('Treatment cycle',sumName,'%','conceptName')
+  return(distribution)}
 
 #' @export
-regimenHeatmap<-function(episodeTableFromDatabase,
-                         visualizationTargetRegimenId = NULL,
-                         heatmapInRatio = TRUE,
-                         maximumCycleNumber = NULL){
+heatmapData<-function(connectionDetails,
+                      resultDatabaseSchema,
+                      cohortTable,
+                      targetCohortIds,
+                      cohortName,
+                      gapDate = 60){
   
-  if(is.null(visualizationTargetRegimenId)){visualizationTargetRegimenId<-unique(episodeTableFromDatabase$episodeSourceConceptId)}
+  standardCycleData<-cohortToStandardCycle(connectionDetails,
+                                           resultDatabaseSchema,
+                                           cohortTable,
+                                           targetCohortIds,
+                                           cohortName,
+                                           gapDate)
   
-  totalDistribution <-data.table::rbindlist(
-    lapply(visualizationTargetRegimenId,function(episodeSourceConceptId){
-      targetRegimenDistributionTable<-distributionTable(episodeTable=episodeTableFromDatabase,
-                                                        targetEpisodeConceptId=episodeSourceConceptId)
-      names(targetRegimenDistributionTable) <- c('cycle','n','ratio','conceptName')
-      return(targetRegimenDistributionTable)})
+  heatmapPlotData <-data.table::rbindlist(
+    lapply(targetCohortIds,function(targetId){
+      result<-distributionTable(standardData=standardCycleData,
+                                targetId=targetId)
+      names(result) <- c('cycle','n','ratio','conceptName')
+      return(result)})
   )
-  if(!is.null(maximumCycleNumber)){
-    totalDistribution <- subset(totalDistribution,cycle <= maximumCycleNumber)
-  }
   
-  if(heatmapInRatio){
-    totalDistribution <- as_tibble(totalDistribution) %>% select(cycle, conceptName, ratio)
-    class(totalDistribution$ratio) = "dbl"
-    plotData <- tidyr::spread(totalDistribution, cycle, ratio)
-  }else{totalDistribution <- as_tibble(totalDistribution) %>% select(cycle, conceptName, n)
-  class(totalDistribution$n) = "dbl"
-  plotData <- tidyr::spread(totalDistribution, cycle, n)}
-  
-  # 
-  plotData <- as.data.frame(plotData)
-  plotData[is.na(plotData)] <- 0
-  row.names(plotData) <- plotData$conceptName
-  plotData$conceptName <- NULL
-  return(plotData)
-}
-#'@export generateHeatmap
-generateHeatmap <- function(connectionDetails,
-                            vocaDatabaseSchema,
-                            oncologyDatabaseSchema,
-                            episodeTable,
-                            visualizationTargetRegimenId = NULL,
-                            heatmapInRatio = TRUE,
-                            maximumCycleNumber = NULL){
-  episodeTableFromDatabase<- episodeTableForVisualization(connectionDetails,
-                                                          vocaDatabaseSchema,
-                                                          oncologyDatabaseSchema,
-                                                          episodeTable)
-  
-  plotData<-regimenHeatmap(episodeTableFromDatabase,
-                 visualizationTargetRegimenId,
-                 heatmapInRatio,
-                 maximumCycleNumber)
-return(plotData)
+  return(heatmapPlotData)
 }
 
-#'@export repetitionTrendHeatmap
-repetitionTrendHeatmap<-function(plotData,colors){
-  sort.order <- order(plotData$"1")
-  heatmap<-superheat::superheat(plotData,
+#' @export repetitionTrendHeatmap
+repetitionTrendHeatmap<-function(heatmapPlotData,
+                                 maximumCycleNumber = 20,
+                                 colors){
+  #label
+  total<-heatmapPlotData %>%group_by(conceptName) %>% mutate(sum = sum(n)) %>% select (conceptName,sum)
+  total<-unique(total)
+  total$label<-paste0(total$conceptName,' \n','(n = ',total$sum,')')
+  
+  heatmapPlotDataN <- as_tibble(heatmapPlotData) %>% mutate(ratioLabel = paste0(ratio,'\n','(n = ',n,')')) %>%  select(cycle, conceptName, ratioLabel)%>% subset(cycle <=maximumCycleNumber)
+  plotDataN <- tidyr::spread(heatmapPlotDataN, cycle, ratioLabel)
+  plotDataN[is.na(plotDataN)] <- 0
+  plotDataN$conceptName <- NULL
+  #data pre-processing
+  heatmapPlotData <- as_tibble(heatmapPlotData) %>% select(cycle, conceptName, ratio) %>% subset(cycle <=maximumCycleNumber) 
+  class(heatmapPlotData$ratio) = "dbl"
+  plotData <- tidyr::spread(heatmapPlotData, cycle, ratio)
+  sort.order <- order(plotDataN$"1")
+  
+
+plotData <- left_join(plotData,total,by = c("conceptName"="conceptName"))
+plotData <- as.data.frame(plotData)
+plotData[is.na(plotData)] <- 0
+
+row.names(plotData) <- plotData$label
+plotData$conceptName <- NULL
+plotData$sum <- NULL
+plotData$label <- NULL
+sort.order <- order(plotData$"1")
+label<-as.matrix(plotDataN)
+heatmap<-superheat::superheat(plotData,
+                              X.text = label,
+                              X.text.size = 2,
                               scale = FALSE,
                               left.label.text.size=3,
                               left.label.size = 0.3,
                               bottom.label.text.size=3,
                               bottom.label.size = .05,
-                              heat.pal = colors,
+                              heat.pal = RColorBrewer::brewer.pal(9, colors),
                               heat.pal.values = c(seq(0,0.3,length.out = 8),1),
                               order.rows = sort.order,
-                              title = "Repeated cycle number in each regimen")}
+                              title = "Trends of the Repetition in each Regimen")
+}
