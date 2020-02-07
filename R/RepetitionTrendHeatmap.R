@@ -39,14 +39,14 @@ distributionTable <- function(standardData,
                               targetId){
   targetStandardData <- standardData %>% subset(cohortDefinitionId == targetId)
   maxCycle<-aggregate(targetStandardData$cycle,by = list(targetStandardData$subjectId), max)
-  colnames(maxCycle) <- c('person_id','Cycle_num')
+  colnames(maxCycle) <- c('personId','CycleNum')
   
   # Total count
   totalCount<-length(unique(maxCycle$personId))
   
   # Count the number of patients in the value of each cycle number
-  distribution<-as.data.frame(maxCycle %>% group_by(Cycle_num) %>% summarise(n = n()))
-  distribution$'%'<-round(prop.table(table(maxCycle$Cycle_num))*100, digits = 1)
+  distribution<-as.data.frame(maxCycle %>% group_by(CycleNum) %>% summarise(n = n()))
+  distribution$'%'<-round(prop.table(table(maxCycle$CycleNum))*100, digits = 1)
   sum<- sum(distribution$n)
   sumName<- paste0('N','(','total=',sum,')')
   distribution$conceptName <- unique(targetStandardData$cohortName)
@@ -96,9 +96,9 @@ repetitionTrendHeatmap<-function(heatmapPlotData,
   heatmapPlotData <- as_tibble(heatmapPlotData) %>% select(cycle, conceptName, ratio) %>% subset(cycle <=maximumCycleNumber) 
   class(heatmapPlotData$ratio) = "dbl"
   plotData <- tidyr::spread(heatmapPlotData, cycle, ratio)
-  sort.order <- order(plotDataN$"1")
+  plotDataNMatrix<-as.matrix(plotDataN)
+  sort.order <- order(plotDataNMatrix[,1])
   
-
 plotData <- left_join(plotData,total,by = c("conceptName"="conceptName"))
 plotData <- as.data.frame(plotData)
 plotData[is.na(plotData)] <- 0
@@ -107,13 +107,14 @@ row.names(plotData) <- plotData$label
 plotData$conceptName <- NULL
 plotData$sum <- NULL
 plotData$label <- NULL
-sort.order <- order(plotData$"1")
+plotDataMatrix<-as.matrix(plotData)
+sort.order <- order(plotDataMatrix[,1])
 label<-as.matrix(plotDataN)
 heatmap<-superheat::superheat(plotData,
                               X.text = label,
-                              X.text.size = 2,
+                              X.text.size = 4,
                               scale = FALSE,
-                              left.label.text.size=3,
+                              left.label.text.size=5,
                               left.label.size = 0.3,
                               bottom.label.text.size=3,
                               bottom.label.size = .05,

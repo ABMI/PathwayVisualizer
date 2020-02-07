@@ -20,7 +20,7 @@
 #' @param oncologyDatabaseSchema
 #' @param cdmDatabaseSchema
 #' @param episodeTable
-#' @param sankeyTargetRegimen
+#' @param targetCohortIds
 #' @param surgeryConceptId
 #' @param regimenChangeNumber
 #' @param regimenMinimumChangeNumber
@@ -65,7 +65,7 @@ sankeyFromEpisode<-function(connectionDetails,
                             oncologyDatabaseSchema,
                             cdmDatabaseSchema,
                             episodeTable,
-                            sankeyTargetRegimen,
+                            targetCohortIds,
                             surgeryConceptId,
                             regimenChangeNumber,
                             regimenMinimumChangeNumber,
@@ -75,10 +75,9 @@ sankeyFromEpisode<-function(connectionDetails,
                                                           vocaDatabaseSchema,
                                                           oncologyDatabaseSchema,
                                                           episodeTable)
+  if(is.null(targetCohortIds)){targetCohortIds<-unique(episodeTableFromDatabase$episodeSourceConceptId)}
   
-  if(is.null(sankeyTargetRegimen)){sankeyTargetRegimen<-unique(episodeTableFromDatabase$episodeSourceConceptId)}
-  
-  regimenSankeyData<-episodeTableFromDatabase %>% select(personId,episodeSourceConceptId,conceptName,episodeStartDatetime,episodeNumber) %>% subset(episodeNumber == 1) %>% subset(episodeSourceConceptId %in% sankeyTargetRegimen)
+  regimenSankeyData<-episodeTableFromDatabase %>% select(personId,episodeSourceConceptId,conceptName,episodeStartDatetime,episodeNumber) %>% subset(episodeNumber == 1) %>% subset(episodeSourceConceptId %in% targetCohortIds)
   
   #call surgery record.
   
