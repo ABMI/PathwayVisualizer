@@ -22,35 +22,57 @@
 #' @param cohortTable
 #' @param targetCohortIds
 #' @param cohortName
-#' @param gapDate
+#' @param maximumCycleGapDate
 #' @param heatmapPlotData
 #' @param maximumCycleNumber
 #' @param colors
 #' @keywords heatmap
 #' @return repitition trend heatmap
-#' @examples 
+#' @examples
 #' @import dplyr
+#' @import data.table
 #' @import superheat
 #' @import ggplot2
 #' @import tidyr
 #' @import RColorBrewer
+#' @export
+cohortToStandardCycle<- function(connectionDetails,
+                                 resultDatabaseSchema,
+                                 cohortTable,
+                                 targetCohortIds,
+                                 maximumCycleGapDate){
+  rawData<-cohortRecords(connectionDetails,
+                         resultDatabaseSchema,
+                         cohortTable,
+                         targetCohortIds)
+  cohortDescript<-cohortDescription()
+  cohortWtName<-dplyr::left_join(rawData,cohortDescript,by=c('cohortDefinitionId' = 'cohortDefinitionId')) %>% select(colnames(rawData),cohortName)
+  cohortWtDiff <- cohortWtName %>% group_by(subjectId,cohortDefinitionId) %>% arrange(subjectId,cohortStartDate) %>% mutate(dateDiff = (cohortStartDate-lag(cohortStartDate)))
+  cohortWtDiff$dateDiff<-as.numeric(cohortWtDiff$dateDiff)
+  cohortWtDiff$flagSeq <- NA
+  cohortWtDiff$flagSeq[is.na(cohortWtDiff$dateDiff)|cohortWtDiff$dateDiff>=maximumCycleGapDate] <- 1
+  standardCycle<-data.table::as.data.table(cohortWtDiff)
+  standardCycle[, cycle := seq_len(.N), by=.(cumsum(!is.na(flagSeq)))]
+  standardCycle<-standardCycle %>% select(cohortDefinitionId,subjectId,cohortStartDate,cohortEndDate,cohortName,cycle)
+  standardCycle<-data.frame(standardCycle)
+  return(standardCycle)}
 #' @export distributionTable
 distributionTable <- function(standardData,
                               targetId){
   targetStandardData <- standardData %>% subset(cohortDefinitionId == targetId)
   maxCycle<-aggregate(targetStandardData$cycle,by = list(targetStandardData$subjectId), max)
   colnames(maxCycle) <- c('personId','CycleNum')
-  
+
   # Total count
   totalCount<-length(unique(maxCycle$personId))
-  
+
   # Count the number of patients in the value of each cycle number
   distribution<-as.data.frame(maxCycle %>% group_by(CycleNum) %>% summarise(n = n()))
   distribution$'%'<-round(prop.table(table(maxCycle$CycleNum))*100, digits = 1)
   sum<- sum(distribution$n)
   sumName<- paste0('N','(','total=',sum,')')
-  distribution$conceptName <- unique(targetStandardData$cohortName)
-  names(distribution) <- c('Treatment cycle',sumName,'%','conceptName')
+  distribution$cohortName <- unique(targetStandardData$cohortName)
+  names(distribution) <- c('Treatment cycle',sumName,'%','cohortName')
   return(distribution)}
 
 #' @export
@@ -59,23 +81,22 @@ heatmapData<-function(connectionDetails,
                       cohortTable,
                       targetCohortIds,
                       cohortName,
-                      gapDate = 60){
-  
+                      maximumCycleGapDate = 60){
+
   standardCycleData<-cohortToStandardCycle(connectionDetails,
                                            resultDatabaseSchema,
                                            cohortTable,
                                            targetCohortIds,
-                                           cohortName,
-                                           gapDate)
-  
+                                           maximumCycleGapDate)
+
   heatmapPlotData <-data.table::rbindlist(
     lapply(targetCohortIds,function(targetId){
       result<-distributionTable(standardData=standardCycleData,
                                 targetId=targetId)
-      names(result) <- c('cycle','n','ratio','conceptName')
+      names(result) <- c('cycle','n','ratio','cohortName')
       return(result)})
   )
-  
+
   return(heatmapPlotData)
 }
 
@@ -84,27 +105,27 @@ repetitionTrendHeatmap<-function(heatmapPlotData,
                                  maximumCycleNumber = 20,
                                  colors){
   #label
-  total<-heatmapPlotData %>%group_by(conceptName) %>% mutate(sum = sum(n)) %>% select (conceptName,sum)
+  total<-heatmapPlotData %>%group_by(cohortName) %>% mutate(sum = sum(n)) %>% select (cohortName,sum)
   total<-unique(total)
-  total$label<-paste0(total$conceptName,' \n','(n = ',total$sum,')')
-  
-  heatmapPlotDataN <- as_tibble(heatmapPlotData) %>% mutate(ratioLabel = paste0(ratio,'\n','(n = ',n,')')) %>%  select(cycle, conceptName, ratioLabel)%>% subset(cycle <=maximumCycleNumber)
+  total$label<-paste0(total$cohortName,' \n','(n = ',total$sum,')')
+
+  heatmapPlotDataN <- as_tibble(heatmapPlotData) %>% mutate(ratioLabel = paste0(ratio,'\n','(n = ',n,')')) %>%  select(cycle, cohortName, ratioLabel)%>% subset(cycle <=maximumCycleNumber)
   plotDataN <- tidyr::spread(heatmapPlotDataN, cycle, ratioLabel)
   plotDataN[is.na(plotDataN)] <- 0
-  plotDataN$conceptName <- NULL
+  plotDataN$cohortName <- NULL
   #data pre-processing
-  heatmapPlotData <- as_tibble(heatmapPlotData) %>% select(cycle, conceptName, ratio) %>% subset(cycle <=maximumCycleNumber) 
+  heatmapPlotData <- as_tibble(heatmapPlotData) %>% select(cycle, cohortName, ratio) %>% subset(cycle <=maximumCycleNumber)
   class(heatmapPlotData$ratio) = "dbl"
   plotData <- tidyr::spread(heatmapPlotData, cycle, ratio)
   plotDataNMatrix<-as.matrix(plotDataN)
   sort.order <- order(plotDataNMatrix[,1])
-  
-plotData <- left_join(plotData,total,by = c("conceptName"="conceptName"))
+
+plotData <- left_join(plotData,total,by = c("cohortName"="cohortName"))
 plotData <- as.data.frame(plotData)
 plotData[is.na(plotData)] <- 0
 
 row.names(plotData) <- plotData$label
-plotData$conceptName <- NULL
+plotData$cohortName <- NULL
 plotData$sum <- NULL
 plotData$label <- NULL
 plotDataMatrix<-as.matrix(plotData)
@@ -112,9 +133,9 @@ sort.order <- order(plotDataMatrix[,1])
 label<-as.matrix(plotDataN)
 heatmap<-superheat::superheat(plotData,
                               X.text = label,
-                              X.text.size = 4,
+                              X.text.size = 3,
                               scale = FALSE,
-                              left.label.text.size=5,
+                              left.label.text.size=4,
                               left.label.size = 0.3,
                               bottom.label.text.size=3,
                               bottom.label.size = .05,
@@ -122,4 +143,5 @@ heatmap<-superheat::superheat(plotData,
                               heat.pal.values = c(seq(0,0.3,length.out = 8),1),
                               order.rows = sort.order,
                               title = "Trends of the Repetition in each Regimen")
+return(heatmap)
 }

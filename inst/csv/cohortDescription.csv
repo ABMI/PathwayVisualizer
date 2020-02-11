@@ -1,0 +1,78 @@
+cohortDefinitionId,cohortName,type
+35804795,Cetuximab monotherapy,regimen
+35804227,Capecitabine monotherapy,regimen
+35804776,FOLFOX4 and Bevacizumab,regimen
+35804765,Intraperitoneal hyperthermic mitomycin,regimen
+35804767,CAPIRI,regimen
+35804545,Fluorouracil and Folinic acid,regimen
+35804759,"Tegafur, Uracil, Folinic acid",regimen
+35804770,FOLFIRI and Bevacizumab,regimen
+35804792,FOLFIRI and Cetuximab,regimen
+35803692,Irinotecan monotherapy,regimen
+35803688,Bevacizumab monotherapy,regimen
+35804769,Fluorouracil monotherapy,regimen
+35804793,FOLFOX4 and Cetuximab,regimen
+35804755,CapeOx,regimen
+35804787,FOLFIRI and Ziv-aflibercept,regimen
+35804761,FOLFIRI,regimen
+35806596,FOLFOX,regimen
+35804569,Regorafenib monotherapy,regimen
+284,Colectomy,surgery
+232,Pneumonia,condition
+116,meropenem,drug
+119,ceftriaxone,drug
+218,imipenem,drug
+219,tobramycin,drug
+220,amikacin,drug
+221,pip-tazo,drug
+222,cefepime,drug
+223,levofloxacin,drug
+224,ciprofloxacin,drug
+225,aztreonam,drug
+227,gentamycin,drug
+228,vancomycin,drug
+229,linezolid,drug
+230,ceftazidime,drug
+1,Paclitaxel monotherapy,breast regimen
+2,Docetaxel monotherapy,breast regimen
+3,FAC,breast regimen
+4,Trastuzumab monotherapy,breast regimen
+5,Capecitabine monotherapy,breast regimen
+6,AC,breast regimen
+7,Vinorelbine monotherapy,breast regimen
+8,Doxorubicin monotherapy,breast regimen
+9,Epirubicin monotherapy,breast regimen
+10,Gemcitabine monotherapy,breast regimen
+11,TH (Taxol),breast regimen
+12,AT (Taxotere),breast regimen
+13,Fluorouracil and Folinic acid,colorectal regimen
+14,FOLFOX,colorectal regimen
+15,Capecitabine monotherapy,colorectal regimen
+16,FOLFIRI,colorectal regimen
+17,FOLFOX4 and Bevacizumab,colorectal regimen
+18,CapeOx,colorectal regimen
+19,FOLFIRI and Bevacizumab,colorectal regimen
+20,FOLFIRI and Cetuximab,colorectal regimen
+21,Fluorouracil and Folinic acid,lung regimen
+22,Gefitinib monotherapy,lung regimen
+23,Pemetrexed monotherapy,lung regimen
+24,Carboplatin and Paclitaxel,lung regimen
+25,Vinorelbine monotherapy,lung regimen
+26,Docetaxel monotherapy,lung regimen
+27,Carboplatin and Gemcitabine,lung regimen
+28,Cisplatin and Pemetrexed,lung regimen
+29,Cisplatin and Vinorelbine,lung regimen
+30,Erlotinib monotherapy,lung regimen
+31,Cisplatin and Docetaxel,lung regimen
+32,Cisplatin and Etoposide,lung regimen
+33,Colectomy,Surgery
+34,Mastectomy,Surgery
+35,Lung excision,Surgery
+36,Fluorouracil and Folinic acid,colorectal regimen cycle
+37,FOLFOX,colorectal regimen cycle
+38,Capecitabine monotherapy,colorectal regimen cycle
+39,FOLFIRI,colorectal regimen cycle
+40,FOLFOX4 and Bevacizumab,colorectal regimen cycle
+41,CapeOx,colorectal regimen cycle
+42,FOLFIRI and Bevacizumab,colorectal regimen cycle
+43,FOLFIRI and Cetuximab,colorectal regimen cycle
