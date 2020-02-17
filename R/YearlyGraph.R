@@ -45,21 +45,21 @@ yearlyGraph<-function(connectionDetails,
 
   ##Treatment cohort##
   cohortDescript <- cohortDescription()
-  treatmentLineCohort<-cohortRecords(connectionDetails,
+  cohortForGraph<-cohortRecords(connectionDetails,
                                      resultDatabaseSchema,
                                      cohortTable,
                                      targetCohortIds)
-  if(!is.null(conditionCohortIds)){treatmentLineCohort<-treatmentLineCohort %>% subset(subjectId %in% conditionCohort$subjectId)}
-  treatmentLineCohort$cohortStartDate<-as.Date(treatmentLineCohort$cohortStartDate)
-  treatmentLineCohort$cohortEndDate<-as.Date(treatmentLineCohort$cohortEndDate)
-  treatmentLineCohort<-dplyr::left_join(treatmentLineCohort,cohortDescript, by= c("cohortDefinitionId"="cohortDefinitionId"))
+  if(!is.null(conditionCohortIds)){cohortForGraph<-cohortForGraph %>% subset(subjectId %in% conditionCohort$subjectId)}
+  cohortForGraph$cohortStartDate<-as.Date(cohortForGraph$cohortStartDate)
+  cohortForGraph$cohortEndDate<-as.Date(cohortForGraph$cohortEndDate)
+  cohortForGraph<-dplyr::left_join(cohortForGraph,cohortDescript, by= c("cohortDefinitionId"="cohortDefinitionId"))
 
-  treatmentLineCohort<-treatmentLineCohort %>% select(subjectId,cohortName,cohortStartDate)
-  treatmentLineCohort$cohortStartDate<-format(as.Date(treatmentLineCohort$cohortStartDate, format="Y-%m-%d"),"%Y")
+  cohortForGraph<-cohortForGraph %>% select(subjectId,cohortName,cohortStartDate)
+  cohortForGraph$cohortStartDate<-format(as.Date(cohortForGraph$cohortStartDate, format="Y-%m-%d"),"%Y")
 
-  treatmentLineCohort<-treatmentLineCohort %>% group_by(cohortStartDate,cohortName)
-  treatmentLineCohort<-unique(treatmentLineCohort)
-  treatmentLineCohort<-treatmentLineCohort %>% summarise(n=n()) %>%ungroup() %>%  arrange(cohortName,cohortStartDate) %>% subset(cohortStartDate <=toYear & cohortStartDate >=fromYear) %>% group_by(cohortStartDate) %>% mutate(total = sum(n)) %>% mutate(ratio = round(n/total*100,1)) %>% select(cohortStartDate,cohortName,ratio)
-  colnames(treatmentLineCohort) <- c('Year','Regimen','ratio')
-  h<-treatmentLineCohort %>% highcharter::hchart(.,type="line",hcaes(x = Year,y=ratio,group = Regimen))
+  cohortForGraph<-cohortForGraph %>% group_by(cohortStartDate,cohortName)
+  cohortForGraph<-unique(cohortForGraph)
+  cohortForGraph<-cohortForGraph %>% summarise(n=n()) %>%ungroup() %>%  arrange(cohortName,cohortStartDate) %>% subset(cohortStartDate <=toYear & cohortStartDate >=fromYear) %>% group_by(cohortStartDate) %>% mutate(total = sum(n)) %>% mutate(ratio = round(n/total*100,1)) %>% select(cohortStartDate,cohortName,ratio)
+  colnames(cohortForGraph) <- c('Year','Regimen','ratio')
+  h<-cohortForGraph %>% highcharter::hchart(.,type="line",hcaes(x = Year,y=ratio,group = Regimen))
   return(h)}
