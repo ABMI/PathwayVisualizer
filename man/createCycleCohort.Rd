@@ -7,8 +7,9 @@ Create cohort of interest by using condition concept Ids.}
 \usage{
 createCycleCohort(createCohortTable = F, connectionDetails,
   oracleTempSchema = NULL, cdmDatabaseSchema, cohortDatabaseSchema,
-  vocabularyDatabaseSchema = cdmDatabaseSchema, cohortTable,
-  conceptIdSet = c(), includeConceptIdSetDescendant = F,
+  oncologyDatabaseSchema, vocabularyDatabaseSchema = cdmDatabaseSchema,
+  cohortTable, episodeTable, conceptIdSet = c(),
+  includeConceptIdSetDescendant = F, collapseGapSize = 0,
   targetCohortId)
 }
 \description{

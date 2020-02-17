@@ -22,7 +22,7 @@
 #' @param cohortTable
 #' @param targetCohortIds
 #' @param cohortName
-#' @param maximumCycleGapDate
+#' @param identicalSeriesCriteria
 #' @param heatmapPlotData
 #' @param maximumCycleNumber
 #' @param colors
@@ -40,17 +40,29 @@ cohortToStandardCycle<- function(connectionDetails,
                                  resultDatabaseSchema,
                                  cohortTable,
                                  targetCohortIds,
-                                 maximumCycleGapDate){
-  rawData<-cohortRecords(connectionDetails,
-                         resultDatabaseSchema,
-                         cohortTable,
-                         targetCohortIds)
-  cohortDescript<-cohortDescription()
-  cohortWtName<-dplyr::left_join(rawData,cohortDescript,by=c('cohortDefinitionId' = 'cohortDefinitionId')) %>% select(colnames(rawData),cohortName)
-  cohortWtDiff <- cohortWtName %>% group_by(subjectId,cohortDefinitionId) %>% arrange(subjectId,cohortStartDate) %>% mutate(dateDiff = (cohortStartDate-lag(cohortStartDate)))
+                                 identicalSeriesCriteria,
+                                 conditionCohortIds){
+  ##Condition cohort##
+  if(!is.null(conditionCohortIds)){
+    conditionCohort<-cohortRecords(connectionDetails,
+                                   resultDatabaseSchema,
+                                   cohortTable,
+                                   conditionCohortIds)}
+
+  ##Treatment cohort##
+  cohortDescript <- cohortDescription()
+  treatmentCycleCohort<-cohortRecords(connectionDetails,
+                                     resultDatabaseSchema,
+                                     cohortTable,
+                                     targetCohortIds)
+  if(!is.null(conditionCohortIds)){treatmentCycleCohort<-treatmentCycleCohort %>% subset(subjectId %in% conditionCohort$subjectId)}
+  treatmentCycleCohort$cohortStartDate<-as.Date(treatmentCycleCohort$cohortStartDate)
+  treatmentCycleCohort$cohortEndDate<-as.Date(treatmentCycleCohort$cohortEndDate)
+  treatmentCycleCohort<-dplyr::left_join(treatmentCycleCohort,cohortDescript, by= c("cohortDefinitionId"="cohortDefinitionId"))
+  cohortWtDiff <- treatmentCycleCohort %>% group_by(subjectId,cohortDefinitionId) %>% arrange(subjectId,cohortStartDate) %>% mutate(dateDiff = (cohortStartDate-lag(cohortStartDate)))
   cohortWtDiff$dateDiff<-as.numeric(cohortWtDiff$dateDiff)
   cohortWtDiff$flagSeq <- NA
-  cohortWtDiff$flagSeq[is.na(cohortWtDiff$dateDiff)|cohortWtDiff$dateDiff>=maximumCycleGapDate] <- 1
+  cohortWtDiff$flagSeq[is.na(cohortWtDiff$dateDiff)|cohortWtDiff$dateDiff>=identicalSeriesCriteria] <- 1
   standardCycle<-data.table::as.data.table(cohortWtDiff)
   standardCycle[, cycle := seq_len(.N), by=.(cumsum(!is.na(flagSeq)))]
   standardCycle<-standardCycle %>% select(cohortDefinitionId,subjectId,cohortStartDate,cohortEndDate,cohortName,cycle)
@@ -75,19 +87,20 @@ distributionTable <- function(standardData,
   names(distribution) <- c('Treatment cycle',sumName,'%','cohortName')
   return(distribution)}
 
-#' @export
+#' @export heatmapData
 heatmapData<-function(connectionDetails,
                       resultDatabaseSchema,
                       cohortTable,
                       targetCohortIds,
-                      cohortName,
-                      maximumCycleGapDate = 60){
+                      identicalSeriesCriteria = 60,
+                      conditionCohortIds = NULL){
 
   standardCycleData<-cohortToStandardCycle(connectionDetails,
                                            resultDatabaseSchema,
                                            cohortTable,
                                            targetCohortIds,
-                                           maximumCycleGapDate)
+                                           identicalSeriesCriteria,
+                                           conditionCohortIds)
 
   heatmapPlotData <-data.table::rbindlist(
     lapply(targetCohortIds,function(targetId){
@@ -128,8 +141,7 @@ row.names(plotData) <- plotData$label
 plotData$cohortName <- NULL
 plotData$sum <- NULL
 plotData$label <- NULL
-plotDataMatrix<-as.matrix(plotData)
-sort.order <- order(plotDataMatrix[,1])
+sort.order <- order(plotData[,1])
 label<-as.matrix(plotDataN)
 heatmap<-superheat::superheat(plotData,
                               X.text = label,
@@ -142,6 +154,6 @@ heatmap<-superheat::superheat(plotData,
                               heat.pal = RColorBrewer::brewer.pal(9, colors),
                               heat.pal.values = c(seq(0,0.3,length.out = 8),1),
                               order.rows = sort.order,
-                              title = "Trends of the Repetition in each Regimen")
+                              title = "Trends of the Repetition")
 return(heatmap)
 }

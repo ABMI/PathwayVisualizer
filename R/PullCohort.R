@@ -45,14 +45,3 @@ cohortDescription <- function(){
   cohortDescription<-read.csv(cohortDescriptionPath)
   return(cohortDescription)
 }
-#' @export
-cohortDescriptionEditor <- function(){
-  cohortDescriptionPath <- paste0(.libPaths()[1],"/PathwayVisualizer/csv/cohortDescription.csv")
-  newCohortDescription<-read.csv(cohortDescriptionPath,stringsAsFactors = FALSE)
-  return(fix(newCohortDescription))
-}
-#' @export
-saveCohortDescription <- function(newCohortDescription){
-  cohortDescriptionPath <- paste0(.libPaths()[1],"/PathwayVisualizer/csv/cohortDescription.csv")
-  write.csv(newCohortDescription,cohortDescriptionPath,row.names = FALSE)}
-

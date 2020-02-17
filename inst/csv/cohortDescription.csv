@@ -1,38 +1,4 @@
 cohortDefinitionId,cohortName,type
-35804795,Cetuximab monotherapy,regimen
-35804227,Capecitabine monotherapy,regimen
-35804776,FOLFOX4 and Bevacizumab,regimen
-35804765,Intraperitoneal hyperthermic mitomycin,regimen
-35804767,CAPIRI,regimen
-35804545,Fluorouracil and Folinic acid,regimen
-35804759,"Tegafur, Uracil, Folinic acid",regimen
-35804770,FOLFIRI and Bevacizumab,regimen
-35804792,FOLFIRI and Cetuximab,regimen
-35803692,Irinotecan monotherapy,regimen
-35803688,Bevacizumab monotherapy,regimen
-35804769,Fluorouracil monotherapy,regimen
-35804793,FOLFOX4 and Cetuximab,regimen
-35804755,CapeOx,regimen
-35804787,FOLFIRI and Ziv-aflibercept,regimen
-35804761,FOLFIRI,regimen
-35806596,FOLFOX,regimen
-35804569,Regorafenib monotherapy,regimen
-284,Colectomy,surgery
-232,Pneumonia,condition
-116,meropenem,drug
-119,ceftriaxone,drug
-218,imipenem,drug
-219,tobramycin,drug
-220,amikacin,drug
-221,pip-tazo,drug
-222,cefepime,drug
-223,levofloxacin,drug
-224,ciprofloxacin,drug
-225,aztreonam,drug
-227,gentamycin,drug
-228,vancomycin,drug
-229,linezolid,drug
-230,ceftazidime,drug
 1,Paclitaxel monotherapy,breast regimen
 2,Docetaxel monotherapy,breast regimen
 3,FAC,breast regimen
@@ -76,3 +42,11 @@ cohortDefinitionId,cohortName,type
 41,CapeOx,colorectal regimen cycle
 42,FOLFIRI and Bevacizumab,colorectal regimen cycle
 43,FOLFIRI and Cetuximab,colorectal regimen cycle
+116,Meropenem,antibiotics
+119,Ceftriaxone,antibiotics
+218,Imipenem,antibiotics
+221,Pip-tazo,antibiotics
+222,Cefepime,antibiotics
+223,Levofloxacin,antibiotics
+232,Pneumonia,Condition
+44,ANCUnder2000,event

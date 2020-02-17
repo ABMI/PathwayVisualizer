@@ -134,6 +134,6 @@ sankeyDiagram<-function(connectionDetails,
   links$value<-as.numeric(links$value)
   ##Sankey data##
   treatment <-list(nodes=nodes,links=links)
-  sankeyDiagram <- networkD3::sankeyNetwork(Links = treatment$links, Nodes = treatment$nodes, Source = "source",Target = "target", Value = "value", NodeID = "name", fontSize = 12, nodeWidth = 30)
+  sankeyDiagram <- networkD3::sankeyNetwork(Links = treatment$links, Nodes = treatment$nodes, Source = "source",Target = "target", Value = "value", NodeID = "name", fontSize = 12, nodeWidth = 30,sinksRight = FALSE)
   return(sankeyDiagram)
 }

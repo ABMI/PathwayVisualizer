@@ -24,30 +24,42 @@
 #' @param toYear
 #' @keywords year
 #' @return Yearly treatment regimen highcharter graph
-#' @examples 
+#' @examples
 #' @import dplyr
 #' @import tidyr
 #' @import highcharter
-#' @export regimenInYear
+#' @export yearlyGraph
+yearlyGraph<-function(connectionDetails,
+                        vocaDatabaseSchema,
+                        oncologyDatabaseSchema,
+                        episodeTable,
+                        targetCohortIds,
+                        fromYear,
+                        toYear){
+  ##Condition cohort##
+  if(!is.null(conditionCohortIds)){
+    conditionCohort<-cohortRecords(connectionDetails,
+                                   resultDatabaseSchema,
+                                   cohortTable,
+                                   conditionCohortIds)}
 
-regimenInYear<-function(connectionDetails,
-                  vocaDatabaseSchema,
-                  oncologyDatabaseSchema,
-                  episodeTable,
-                  targetRegimen,
-                  fromYear,
-                  toYear){
-  treatmentLineData<-treatmentLineFromEpisode(connectionDetails,
-                                              vocaDatabaseSchema,
-                                              oncologyDatabaseSchema,
-                                              episodeTable)
-  treatmentLineData<-treatmentLineData %>% subset(episodeSourceConceptId%in%targetRegimen)
-  treatmentLineData<-treatmentLineData %>% select(personId,conceptName,episodeStartDatetime)
-  treatmentLineData$episodeStartDatetime<-format(as.Date(treatmentLineData$episodeStartDatetime, format="Y-%m-%d"),"%Y")
-  
-  treatmentLineData<-treatmentLineData %>% group_by(episodeStartDatetime,conceptName)
-  treatmentLineData<-unique(treatmentLineData)
-  treatmentLineData<-treatmentLineData %>% summarise(n=n()) %>%ungroup() %>%  arrange(conceptName,episodeStartDatetime) %>% subset(episodeStartDatetime <=toYear & episodeStartDatetime >=fromYear) %>% group_by(episodeStartDatetime) %>% mutate(total = sum(n)) %>% mutate(ratio = round(n/total*100,1)) %>% select(episodeStartDatetime,conceptName,ratio)
-  colnames(treatmentLineData) <- c('Year','Regimen','ratio')
-  h<-treatmentLineData %>% highcharter::hchart(.,type="line",hcaes(x = Year,y=ratio,group = Regimen))
+  ##Treatment cohort##
+  cohortDescript <- cohortDescription()
+  treatmentLineCohort<-cohortRecords(connectionDetails,
+                                     resultDatabaseSchema,
+                                     cohortTable,
+                                     targetCohortIds)
+  if(!is.null(conditionCohortIds)){treatmentLineCohort<-treatmentLineCohort %>% subset(subjectId %in% conditionCohort$subjectId)}
+  treatmentLineCohort$cohortStartDate<-as.Date(treatmentLineCohort$cohortStartDate)
+  treatmentLineCohort$cohortEndDate<-as.Date(treatmentLineCohort$cohortEndDate)
+  treatmentLineCohort<-dplyr::left_join(treatmentLineCohort,cohortDescript, by= c("cohortDefinitionId"="cohortDefinitionId"))
+
+  treatmentLineCohort<-treatmentLineCohort %>% select(subjectId,cohortName,cohortStartDate)
+  treatmentLineCohort$cohortStartDate<-format(as.Date(treatmentLineCohort$cohortStartDate, format="Y-%m-%d"),"%Y")
+
+  treatmentLineCohort<-treatmentLineCohort %>% group_by(cohortStartDate,cohortName)
+  treatmentLineCohort<-unique(treatmentLineCohort)
+  treatmentLineCohort<-treatmentLineCohort %>% summarise(n=n()) %>%ungroup() %>%  arrange(cohortName,cohortStartDate) %>% subset(cohortStartDate <=toYear & cohortStartDate >=fromYear) %>% group_by(cohortStartDate) %>% mutate(total = sum(n)) %>% mutate(ratio = round(n/total*100,1)) %>% select(cohortStartDate,cohortName,ratio)
+  colnames(treatmentLineCohort) <- c('Year','Regimen','ratio')
+  h<-treatmentLineCohort %>% highcharter::hchart(.,type="line",hcaes(x = Year,y=ratio,group = Regimen))
   return(h)}
