@@ -17,6 +17,7 @@
 #' Visualization tool for sankey for regimen and surgery
 #' @param connectionDetails
 #' @param resultDatabaseSchema
+#' @param cohortTable
 #' @param conditionCohortIds
 #' @param targetCohortIds
 #' @param eventCohortIds
@@ -32,6 +33,7 @@
 #' @export
 sankeyDiagram<-function(connectionDetails,
                         resultDatabaseSchema,
+                        cohortTable,
                         conditionCohortIds=NULL,
                         targetCohortIds,
                         eventCohortIds=NULL,
@@ -49,14 +51,14 @@ sankeyDiagram<-function(connectionDetails,
 
   ##Treatment cohort##
   cohortDescript <- cohortDescription()
-  treatmentLineCohort<-cohortRecords(connectionDetails,
+  cohortData<-cohortRecords(connectionDetails,
                                      resultDatabaseSchema,
                                      cohortTable,
                                      targetCohortIds)
-  if(!is.null(conditionCohortIds)){treatmentLineCohort<-treatmentLineCohort %>% subset(subjectId %in% conditionCohort$subjectId)}
-  treatmentLineCohort$cohortStartDate<-as.Date(treatmentLineCohort$cohortStartDate)
-  treatmentLineCohort$cohortEndDate<-as.Date(treatmentLineCohort$cohortEndDate)
-  treatmentLineCohort<-dplyr::left_join(treatmentLineCohort,cohortDescript, by= c("cohortDefinitionId"="cohortDefinitionId"))
+  if(!is.null(conditionCohortIds)){cohortData<-cohortData %>% subset(subjectId %in% conditionCohort$subjectId)}
+  cohortData$cohortStartDate<-as.Date(cohortData$cohortStartDate)
+  cohortData$cohortEndDate<-as.Date(cohortData$cohortEndDate)
+  cohortData<-dplyr::left_join(cohortData,cohortDescript, by= c("cohortDefinitionId"="cohortDefinitionId"))
   ##event cohort##
   if(!is.null(eventCohortIds)){
     eventCohort<-cohortRecords(connectionDetails,
@@ -65,54 +67,54 @@ sankeyDiagram<-function(connectionDetails,
                                eventCohortIds)
     eventCohort<-dplyr::left_join(eventCohort,cohortDescript, by= c("cohortDefinitionId"="cohortDefinitionId"))
     if(!is.null(conditionCohortIds)){eventCohort<-eventCohort %>% subset(subjectId %in% conditionCohort$subjectId)}
-    colnames(eventCohort) <- colnames(treatmentLineCohort)
+    colnames(eventCohort) <- colnames(cohortData)
     eventCohort$cohortStartDate<-as.Date(eventCohort$cohortStartDate)
     eventCohort$cohortEndDate<-as.Date(eventCohort$cohortEndDate)}
 
   ##Ignore the change to same regimen##
-  treatmentLineCohort <- treatmentLineCohort %>% arrange(subjectId,cohortStartDate) %>% group_by(subjectId)%>% mutate(lagCDI = lag(cohortName)) %>% subset(is.na(lagCDI)|lagCDI != cohortName) %>% select(-lagCDI)
-  treatmentLineCohort <- as.data.frame(treatmentLineCohort)
-  ##Bind event and chemotherapy, Ignore duplicated event records##
+  cohortData <- cohortData %>% arrange(subjectId,cohortStartDate) %>% group_by(subjectId)%>% mutate(lagCDI = lag(cohortName)) %>% subset(is.na(lagCDI)|lagCDI != cohortName) %>% select(-lagCDI)
+  cohortData <- as.data.frame(cohortData)
+  ##Bind event and target cohort, Ignore duplicated event records##
   if(!is.null(eventCohortIds)){
-    treatmentRecords<-rbind(treatmentLineCohort,eventCohort) %>% arrange(subjectId,cohortStartDate) %>% group_by(subjectId)%>% mutate(lagCDI = lag(cohortName)) %>% subset(is.na(lagCDI)|lagCDI != cohortName) %>% select(-lagCDI) %>% ungroup()
-    treatmentRecords$cohortName <- as.character(treatmentRecords$cohortName)
-    treatmentRecords <- as.data.frame(treatmentRecords)}else{
-      treatmentRecords<-treatmentLineCohort %>% arrange(subjectId,cohortStartDate) %>% group_by(subjectId)%>% mutate(lagCDI = lag(cohortName)) %>% subset(is.na(lagCDI)|lagCDI != cohortName) %>% select(-lagCDI) %>% ungroup()
-      treatmentRecords$cohortName <- as.character(treatmentRecords$cohortName)
-      treatmentRecords <- as.data.frame(treatmentRecords)}
+    eventAndTarget<-rbind(cohortData,eventCohort) %>% arrange(subjectId,cohortStartDate) %>% group_by(subjectId)%>% mutate(lagCDI = lag(cohortName)) %>% subset(is.na(lagCDI)|lagCDI != cohortName) %>% select(-lagCDI) %>% ungroup()
+    eventAndTarget$cohortName <- as.character(eventAndTarget$cohortName)
+    eventAndTarget <- as.data.frame(eventAndTarget)}else{
+      eventAndTarget<-cohortData %>% arrange(subjectId,cohortStartDate) %>% group_by(subjectId)%>% mutate(lagCDI = lag(cohortName)) %>% subset(is.na(lagCDI)|lagCDI != cohortName) %>% select(-lagCDI) %>% ungroup()
+      eventAndTarget$cohortName <- as.character(eventAndTarget$cohortName)
+      eventAndTarget <- as.data.frame(eventAndTarget)}
   ##If regimens apart from each other less than collapseDates, collapse using '/'##
-  collapsedRecords<-data.table::rbindlist(lapply(unique(treatmentRecords$subjectId),function(targetSubjectId){
+  collapsedRecords<-data.table::rbindlist(lapply(unique(eventAndTarget$subjectId),function(targetSubjectId){
     reconstructedRecords <-data.frame()
-    targetTreatmentRecords<-treatmentRecords %>% subset(subjectId == targetSubjectId)
-    reconstructedRecords<-rbind(reconstructedRecords,targetTreatmentRecords[1,])
+    targeteventAndTarget<-eventAndTarget %>% subset(subjectId == targetSubjectId)
+    reconstructedRecords<-rbind(reconstructedRecords,targeteventAndTarget[1,])
 
-    if(nrow(targetTreatmentRecords)>=2){
-      for(x in 2:nrow(targetTreatmentRecords)){
-        if(as.integer(targetTreatmentRecords[x,3]-reconstructedRecords[nrow(reconstructedRecords),3])>collapseDates){
-          reconstructedRecords <-rbind(reconstructedRecords,targetTreatmentRecords[x,])}else{sortNames<-sort(c(targetTreatmentRecords[x,5],reconstructedRecords[nrow(reconstructedRecords),5]))
+    if(nrow(targeteventAndTarget)>=2){
+      for(x in 2:nrow(targeteventAndTarget)){
+        if(as.integer(targeteventAndTarget[x,3]-reconstructedRecords[nrow(reconstructedRecords),3])>collapseDates){
+          reconstructedRecords <-rbind(reconstructedRecords,targeteventAndTarget[x,])}else{sortNames<-sort(c(targeteventAndTarget[x,5],reconstructedRecords[nrow(reconstructedRecords),5]))
           reconstructedRecords[nrow(reconstructedRecords),5]<-paste0(sortNames,collapse = '/')
           }}}
     return(reconstructedRecords)}))
   ##Set minimum regimen change count##
-  treatmentRecords<-collapsedRecords
-  minimunIndexId<-unique(treatmentRecords %>% arrange(subjectId,cohortStartDate) %>% group_by(subjectId) %>% mutate(line = row_number()) %>% subset(line >= minimumRegimenChange) %>% select(subjectId) %>% ungroup())
-  treatmentRecords<-treatmentRecords %>% subset(subjectId %in% minimunIndexId$subjectId) %>% arrange(subjectId,cohortStartDate)
+  eventAndTarget<-collapsedRecords
+  minimunIndexId<-unique(eventAndTarget %>% arrange(subjectId,cohortStartDate) %>% group_by(subjectId) %>% mutate(line = row_number()) %>% subset(line >= minimumRegimenChange) %>% select(subjectId) %>% ungroup())
+  eventAndTarget<-eventAndTarget %>% subset(subjectId %in% minimunIndexId$subjectId) %>% arrange(subjectId,cohortStartDate)
   ##Maximum treatment line in graph##
-  treatmentRecords <- treatmentRecords %>% group_by(subjectId) %>% arrange(subjectId,cohortStartDate) %>% mutate(rowNumber = row_number()) %>% subset(rowNumber <= treatmentLine) %>% select(subjectId,cohortName,rowNumber) %>% mutate(regimenName = paste0(rowNumber,'_',cohortName)) %>% ungroup()
+  eventAndTarget <- eventAndTarget %>% group_by(subjectId) %>% arrange(subjectId,cohortStartDate) %>% mutate(rowNumber = row_number()) %>% subset(rowNumber <= treatmentLine) %>% select(subjectId,cohortName,rowNumber) %>% mutate(nameOfConcept = paste0(rowNumber,'_',cohortName)) %>% ungroup()
   ##Label##
-  label <-unique(treatmentRecords %>% select(cohortName,regimenName) %>% arrange(regimenName))
+  label <-unique(eventAndTarget %>% select(cohortName,nameOfConcept) %>% arrange(nameOfConcept))
   label <-label %>% mutate(num = seq(from = 0,length.out = nrow(label)))
   ##Nodes##
-  treatmentRatio<-data.table::rbindlist(lapply(1:treatmentLine,function(x){treatmentRecords %>% subset(rowNumber==x) %>% group_by(regimenName) %>% summarise(n=n()) %>% mutate(ratio=round(n/sum(n)*100,1))}))
+  treatmentRatio<-data.table::rbindlist(lapply(1:treatmentLine,function(x){eventAndTarget %>% subset(rowNumber==x) %>% group_by(nameOfConcept) %>% summarise(n=n()) %>% mutate(ratio=round(n/sum(n)*100,1))}))
   treatmentRatio<-treatmentRatio %>% subset(n>=nodeMinSubject)
-  label<-dplyr::left_join(treatmentRatio,label,by=c("regimenName"="regimenName")) %>% mutate(name = paste0(cohortName,' (n=',n,', ',ratio,'%)'))
+  label<-dplyr::left_join(treatmentRatio,label,by=c("nameOfConcept"="nameOfConcept")) %>% mutate(name = paste0(cohortName,' (n=',n,', ',ratio,'%)'))
   label<-label %>% mutate(num = seq(from = 0, length.out = nrow(label)))
   nodes<- label %>% select(name)
   nodes<-data.frame(nodes)
   ##Pivot table##
-  pivotRecords<-reshape2::dcast(treatmentRecords,subjectId ~ rowNumber, value.var="regimenName")
+  pivotRecords<-reshape2::dcast(eventAndTarget,subjectId ~ rowNumber, value.var="nameOfConcept")
   ##Link##
-  link<-data.table::rbindlist(lapply(2:max(treatmentRecords$rowNumber),function(x){
+  link<-data.table::rbindlist(lapply(2:max(eventAndTarget$rowNumber),function(x){
     source <- pivotRecords[,x]
     target <- pivotRecords[,x+1]
     link <-data.frame(source,target)
@@ -123,8 +125,8 @@ sankeyDiagram<-function(connectionDetails,
   link$source<-as.character(link$source)
   link$target<-as.character(link$target)
   link<-link %>% select(source,target)%>% group_by(source,target)%>% summarise(n=n()) %>% ungroup()
-  source<-dplyr::left_join(link,label,by = c("source" = "regimenName")) %>% select(num)
-  target<-dplyr::left_join(link,label,by = c("target" = "regimenName")) %>% select(num)
+  source<-dplyr::left_join(link,label,by = c("source" = "nameOfConcept")) %>% select(num)
+  target<-dplyr::left_join(link,label,by = c("target" = "nameOfConcept")) %>% select(num)
   freq<-link %>% select(n)
   links<-data.frame(source,target,freq)
   links<-na.omit(links)

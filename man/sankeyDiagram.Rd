@@ -5,7 +5,7 @@
 \title{sankey for regimen and surgery
 Visualization tool for sankey for regimen and surgery}
 \usage{
-sankeyDiagram(connectionDetails, resultDatabaseSchema,
+sankeyDiagram(connectionDetails, resultDatabaseSchema, cohortTable,
   conditionCohortIds = NULL, targetCohortIds, eventCohortIds = NULL,
   minimumRegimenChange = 0, treatmentLine = 3, collapseDates = 0,
   nodeMinSubject = 0)

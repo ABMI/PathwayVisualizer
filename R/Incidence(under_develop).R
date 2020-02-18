@@ -142,25 +142,14 @@ plotNeutrophil<-function(neutropeniaSeperationWithRatio){
 ##Incidence_under_development##
 
 
-connectionDetails <- DatabaseConnector::createConnectionDetails(dbms='postgresql',
-                                                                server='128.1.99.58/evidnet',
-                                                                schema='cdmpv531',
-                                                                user='postgres',
-                                                                password='serV3RI7hOabml',
-                                                                port='5433')
+
 resultDatabaseSchema <-  'hkocdm'
 cohortTable <- 'cohort_sample'
 targetCohortIds <- c(seq(from = 36, to = 43))
 identicalSeriesCriteria <- 60
 conditionCohortIds <- NULL
 ####
-standardCycleData<-cohortToStandardCycle(connectionDetails,
-                                         resultDatabaseSchema,
-                                         cohortTable,
-                                         targetCohortIds,
-                                         identicalSeriesCriteria,
-                                         conditionCohortIds)
-View(standardCycleData)
+
 ####
 # loading libraries
 library(dplyr)
@@ -185,7 +174,7 @@ cohorts[c(11, 23, 35), 3] <- as.integer(cohorts[c(11, 23, 35), 3] * 1.10)
 cohorts[c(11, 23, 35), 4] <- as.integer(cohorts[c(11, 23, 35), 4] * 1.07)
 
 # calculating retention rate and preparing data for plotting
-df_plot <- melt(cohorts, id.vars = 'cohort', value.name = 'number', variable.name = 'year_of_LT')
+df_plot <- reshape2::melt(cohorts, id.vars = 'cohort', value.name = 'number', variable.name = 'year_of_LT')
 
 df_plot <- df_plot %>%
   group_by(cohort) %>%
@@ -195,11 +184,12 @@ df_plot <- df_plot %>%
   ungroup() %>%
   mutate(ret_rate_prev_year = number / number_prev_year,
          ret_rate = number / number_Y_00,
-         year_cohort = paste(year_of_LT, cohort, sep = '-'))
+         year_cohort = paste(year_of_LT, cohort, sep = '-')) %>% subset(year_of_LT %in% c('Y_01','Y_02','Y_03'))
 
 ##### The first way for plotting cycle plot via scaling
 # calculating the coefficient for scaling 2nd axis
 k <- max(df_plot$number_prev_year[df_plot$year_of_LT == 'Y_01'] * 1.15) / min(df_plot$ret_rate[df_plot$year_of_LT == 'Y_01'])
+# calculating the coefficient for scaling 2nd axis
 
 # retention rate cycle plot
 ggplot(na.omit(df_plot), aes(x = year_cohort, y = ret_rate, group = year_of_LT, color = year_of_LT)) +

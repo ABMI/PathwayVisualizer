@@ -39,7 +39,7 @@ cohortRecords <- function(connectionDetails,
   colnames(Cohort) <- SqlRender::snakeCaseToCamelCase(colnames(Cohort))
   DatabaseConnector::disconnect(connection)
   return(Cohort)}
-#' @export
+#' @export cohortDescription
 cohortDescription <- function(){
   cohortDescriptionPath <- paste0(.libPaths()[1],"/PathwayVisualizer/csv/cohortDescription.csv")
   cohortDescription<-read.csv(cohortDescriptionPath)

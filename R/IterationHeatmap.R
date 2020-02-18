@@ -35,13 +35,13 @@
 #' @import ggplot2
 #' @import tidyr
 #' @import RColorBrewer
-#' @export
-cohortToStandardCycle<- function(connectionDetails,
-                                 resultDatabaseSchema,
-                                 cohortTable,
-                                 targetCohortIds,
-                                 identicalSeriesCriteria,
-                                 conditionCohortIds){
+#' @export cohortCycle
+cohortCycle<- function(connectionDetails,
+                       resultDatabaseSchema,
+                       cohortTable,
+                       targetCohortIds,
+                       identicalSeriesCriteria,
+                       conditionCohortIds){
   ##Condition cohort##
   if(!is.null(conditionCohortIds)){
     conditionCohort<-cohortRecords(connectionDetails,
@@ -51,15 +51,15 @@ cohortToStandardCycle<- function(connectionDetails,
 
   ##Treatment cohort##
   cohortDescript <- cohortDescription()
-  treatmentCycleCohort<-cohortRecords(connectionDetails,
-                                     resultDatabaseSchema,
-                                     cohortTable,
-                                     targetCohortIds)
-  if(!is.null(conditionCohortIds)){treatmentCycleCohort<-treatmentCycleCohort %>% subset(subjectId %in% conditionCohort$subjectId)}
-  treatmentCycleCohort$cohortStartDate<-as.Date(treatmentCycleCohort$cohortStartDate)
-  treatmentCycleCohort$cohortEndDate<-as.Date(treatmentCycleCohort$cohortEndDate)
-  treatmentCycleCohort<-dplyr::left_join(treatmentCycleCohort,cohortDescript, by= c("cohortDefinitionId"="cohortDefinitionId"))
-  cohortWtDiff <- treatmentCycleCohort %>% group_by(subjectId,cohortDefinitionId) %>% arrange(subjectId,cohortStartDate) %>% mutate(dateDiff = (cohortStartDate-lag(cohortStartDate)))
+  cycleCohort<-cohortRecords(connectionDetails,
+                             resultDatabaseSchema,
+                             cohortTable,
+                             targetCohortIds)
+  if(!is.null(conditionCohortIds)){cycleCohort<-cycleCohort %>% subset(subjectId %in% conditionCohort$subjectId)}
+  cycleCohort$cohortStartDate<-as.Date(cycleCohort$cohortStartDate)
+  cycleCohort$cohortEndDate<-as.Date(cycleCohort$cohortEndDate)
+  cycleCohort<-dplyr::left_join(cycleCohort,cohortDescript, by= c("cohortDefinitionId"="cohortDefinitionId"))
+  cohortWtDiff <- cycleCohort %>% group_by(subjectId,cohortDefinitionId) %>% arrange(subjectId,cohortStartDate) %>% mutate(dateDiff = (cohortStartDate-lag(cohortStartDate)))
   cohortWtDiff$dateDiff<-as.numeric(cohortWtDiff$dateDiff)
   cohortWtDiff$flagSeq <- NA
   cohortWtDiff$flagSeq[is.na(cohortWtDiff$dateDiff)|cohortWtDiff$dateDiff>=identicalSeriesCriteria] <- 1
@@ -68,6 +68,7 @@ cohortToStandardCycle<- function(connectionDetails,
   standardCycle<-standardCycle %>% select(cohortDefinitionId,subjectId,cohortStartDate,cohortEndDate,cohortName,cycle)
   standardCycle<-data.frame(standardCycle)
   return(standardCycle)}
+
 #' @export distributionTable
 distributionTable <- function(standardData,
                               targetId){
@@ -95,12 +96,12 @@ heatmapData<-function(connectionDetails,
                       identicalSeriesCriteria = 60,
                       conditionCohortIds = NULL){
 
-  standardCycleData<-cohortToStandardCycle(connectionDetails,
-                                           resultDatabaseSchema,
-                                           cohortTable,
-                                           targetCohortIds,
-                                           identicalSeriesCriteria,
-                                           conditionCohortIds)
+  standardCycleData<-cohortCycle(connectionDetails,
+                                 resultDatabaseSchema,
+                                 cohortTable,
+                                 targetCohortIds,
+                                 identicalSeriesCriteria,
+                                 conditionCohortIds)
 
   heatmapPlotData <-data.table::rbindlist(
     lapply(targetCohortIds,function(targetId){
@@ -113,8 +114,8 @@ heatmapData<-function(connectionDetails,
   return(heatmapPlotData)
 }
 
-#' @export repetitionTrendHeatmap
-repetitionTrendHeatmap<-function(heatmapPlotData,
+#' @export iterationHeatmap
+iterationHeatmap<-function(heatmapPlotData,
                                  maximumCycleNumber = 20,
                                  colors){
   #label
@@ -133,27 +134,27 @@ repetitionTrendHeatmap<-function(heatmapPlotData,
   plotDataNMatrix<-as.matrix(plotDataN)
   sort.order <- order(plotDataNMatrix[,1])
 
-plotData <- left_join(plotData,total,by = c("cohortName"="cohortName"))
-plotData <- as.data.frame(plotData)
-plotData[is.na(plotData)] <- 0
+  plotData <- left_join(plotData,total,by = c("cohortName"="cohortName"))
+  plotData <- as.data.frame(plotData)
+  plotData[is.na(plotData)] <- 0
 
-row.names(plotData) <- plotData$label
-plotData$cohortName <- NULL
-plotData$sum <- NULL
-plotData$label <- NULL
-sort.order <- order(plotData[,1])
-label<-as.matrix(plotDataN)
-heatmap<-superheat::superheat(plotData,
-                              X.text = label,
-                              X.text.size = 3,
-                              scale = FALSE,
-                              left.label.text.size=4,
-                              left.label.size = 0.3,
-                              bottom.label.text.size=3,
-                              bottom.label.size = .05,
-                              heat.pal = RColorBrewer::brewer.pal(9, colors),
-                              heat.pal.values = c(seq(0,0.3,length.out = 8),1),
-                              order.rows = sort.order,
-                              title = "Trends of the Repetition")
-return(heatmap)
+  row.names(plotData) <- plotData$label
+  plotData$cohortName <- NULL
+  plotData$sum <- NULL
+  plotData$label <- NULL
+  sort.order <- order(plotData[,1])
+  label<-as.matrix(plotDataN)
+  heatmap<-superheat::superheat(plotData,
+                                X.text = label,
+                                X.text.size = 3,
+                                scale = FALSE,
+                                left.label.text.size=4,
+                                left.label.size = 0.3,
+                                bottom.label.text.size=3,
+                                bottom.label.size = .05,
+                                heat.pal = RColorBrewer::brewer.pal(9, colors),
+                                heat.pal.values = c(seq(0,0.3,length.out = 8),1),
+                                order.rows = sort.order,
+                                title = "Trends of the Repetition")
+  return(heatmap)
 }
