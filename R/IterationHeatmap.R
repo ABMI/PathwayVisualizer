@@ -25,7 +25,7 @@
 #' @param identicalSeriesCriteria
 #' @param heatmapPlotData
 #' @param maximumCycleNumber
-#' @param colors
+#' @param colorSeed
 #' @keywords heatmap
 #' @return repitition trend heatmap
 #' @examples
@@ -116,8 +116,8 @@ heatmapData<-function(connectionDetails,
 
 #' @export iterationHeatmap
 iterationHeatmap<-function(heatmapPlotData,
-                                 maximumCycleNumber = 20,
-                                 colors){
+                           maximumCycleNumber = 20,
+                           colorSeed=1){
   #label
   total<-heatmapPlotData %>%group_by(cohortName) %>% mutate(sum = sum(n)) %>% select (cohortName,sum)
   total<-unique(total)
@@ -144,15 +144,21 @@ iterationHeatmap<-function(heatmapPlotData,
   plotData$label <- NULL
   sort.order <- order(plotData[,1])
   label<-as.matrix(plotDataN)
+  #Color
+  colorList<- c("Reds",'Blues','Greens')
+  set.seed(colorSeed)
+  randomColorNum<-sample(1:length(colorList),1)
+  selectedColor<-unlist(lapply(randomColorNum,function(x){colorList[x]}))
+
   heatmap<-superheat::superheat(plotData,
                                 X.text = label,
                                 X.text.size = 3,
                                 scale = FALSE,
-                                left.label.text.size=4,
+                                left.label.text.size=3,
                                 left.label.size = 0.3,
                                 bottom.label.text.size=3,
                                 bottom.label.size = .05,
-                                heat.pal = RColorBrewer::brewer.pal(9, colors),
+                                heat.pal = RColorBrewer::brewer.pal(9, selectedColor),
                                 heat.pal.values = c(seq(0,0.3,length.out = 8),1),
                                 order.rows = sort.order,
                                 title = "Trends of the Repetition")

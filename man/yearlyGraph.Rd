@@ -5,8 +5,8 @@
 \title{Yearly graph
 Yearly graph in treatment regimen}
 \usage{
-yearlyGraph(connectionDetails, vocaDatabaseSchema, oncologyDatabaseSchema,
-  episodeTable, targetCohortIds, fromYear, toYear)
+yearlyGraph(connectionDetails, vocaDatabaseSchema, targetCohortIds,
+  fromYear, toYear)
 }
 \value{
 Yearly treatment regimen highcharter graph

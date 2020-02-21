@@ -50,3 +50,39 @@ cohortDefinitionId,cohortName,type
 223,Levofloxacin,antibiotics
 232,Pneumonia,Condition
 44,ANCUnder2000,event
+45,AT (Taxotere),breast regimen cycle
+46,AC,breast regimen cycle
+47,CMF,breast regimen cycle
+48,FAC,breast regimen cycle
+49,FEC,breast regimen cycle
+50,Trastuzumab monotherapy,breast regimen cycle
+51,AT (Taxol),breast regimen cycle
+52,Capecitabine monotherapy,breast regimen cycle
+53,Doxorubicin monotherapy,breast regimen cycle
+54,Epirubicin monotherapy,breast regimen cycle
+55,Paclitaxel monotherapy,breast regimen cycle
+56,Docetaxel monotherapy,breast regimen cycle
+57,Vinorelbine monotherapy,breast regimen cycle
+58,Eribulin monotherapy,breast regimen cycle
+59,THP (Taxotere),breast regimen cycle
+60,TH (Taxol),breast regimen cycle
+61,TH (Taxotere),breast regimen cycle
+62,Capecitabine and Lapatinib,breast regimen cycle
+63,AT (Taxotere),breast regimen
+64,AC,breast regimen
+65,CMF,breast regimen
+66,FAC,breast regimen
+67,FEC,breast regimen
+68,Trastuzumab monotherapy,breast regimen
+69,AT (Taxol),breast regimen
+70,Capecitabine monotherapy,breast regimen
+71,Doxorubicin monotherapy,breast regimen
+72,Epirubicin monotherapy,breast regimen
+73,Paclitaxel monotherapy,breast regimen
+74,Docetaxel monotherapy,breast regimen
+75,Vinorelbine monotherapy,breast regimen
+76,Eribulin monotherapy,breast regimen
+77,THP (Taxotere),breast regimen
+78,TH (Taxol),breast regimen
+79,TH (Taxotere),breast regimen
+80,Capecitabine and Lapatinib,breast regimen

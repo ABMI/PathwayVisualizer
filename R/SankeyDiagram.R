@@ -30,7 +30,7 @@
 #' @examples
 #' @import dplyr
 #' @import networkD3
-#' @export
+#' @export sankeyDiagram
 sankeyDiagram<-function(connectionDetails,
                         resultDatabaseSchema,
                         cohortTable,

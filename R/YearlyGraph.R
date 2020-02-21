@@ -17,8 +17,6 @@
 #' Yearly graph in treatment regimen
 #' @param connectionDetails
 #' @param vocaDatabaseSchema
-#' @param oncologyDatabaseSchema
-#' @param episodeTable
 #' @param targetRegimen
 #' @param fromYear
 #' @param toYear
@@ -31,8 +29,6 @@
 #' @export yearlyGraph
 yearlyGraph<-function(connectionDetails,
                         vocaDatabaseSchema,
-                        oncologyDatabaseSchema,
-                        episodeTable,
                         targetCohortIds,
                         fromYear,
                         toYear){
@@ -43,7 +39,7 @@ yearlyGraph<-function(connectionDetails,
                                    cohortTable,
                                    conditionCohortIds)}
 
-  ##Treatment cohort##
+  ##cohort##
   cohortDescript <- cohortDescription()
   cohortForGraph<-cohortRecords(connectionDetails,
                                      resultDatabaseSchema,
@@ -60,6 +56,12 @@ yearlyGraph<-function(connectionDetails,
   cohortForGraph<-cohortForGraph %>% group_by(cohortStartDate,cohortName)
   cohortForGraph<-unique(cohortForGraph)
   cohortForGraph<-cohortForGraph %>% summarise(n=n()) %>%ungroup() %>%  arrange(cohortName,cohortStartDate) %>% subset(cohortStartDate <=toYear & cohortStartDate >=fromYear) %>% group_by(cohortStartDate) %>% mutate(total = sum(n)) %>% mutate(ratio = round(n/total*100,1)) %>% select(cohortStartDate,cohortName,ratio)
-  colnames(cohortForGraph) <- c('Year','Regimen','ratio')
-  h<-cohortForGraph %>% highcharter::hchart(.,type="line",hcaes(x = Year,y=ratio,group = Regimen))
+  colnames(cohortForGraph) <- c('Year','Cohort','ratio')
+  cohortForGraph$Year<-as.integer(cohortForGraph$Year)
+  Year<-rep(c(fromYear:toYear),length(unique(cohortForGraph$Cohort)))
+  Cohort<-sort(rep(unique(cohortForGraph$Cohort),length(c(fromYear:toYear))))
+  index<-data.frame(Year,Cohort)
+  plotData<-left_join(index,cohortForGraph)
+  plotData[is.na(plotData)]<-0
+  h<-plotData %>% highcharter::hchart(.,type="line",hcaes(x = Year,y=ratio,group = Cohort))
   return(h)}

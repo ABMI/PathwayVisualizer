@@ -24,7 +24,7 @@
 #' @param identicalSeriesCriteria
 #' @param eventPeriod
 #' @param targetMin
-#' @param colorSeed
+#' @param restrictInitialSeries
 #' @keywords Incidence
 #' @return Incidence plot
 #' @examples
@@ -33,6 +33,7 @@
 #' @import ggplot2
 #' @import scales
 #' @import gridExtra
+#' @import viridis
 #' @export incidencePlot
 incidencePlot<-function(connectionDetails,
                         resultDatabaseSchema,
@@ -40,10 +41,11 @@ incidencePlot<-function(connectionDetails,
                         targetCohortIds,
                         conditionCohortIds,
                         eventCohortIds,
+                        restrictInitialSeries = TRUE,
+                        restricInitialEvent =TRUE,
                         identicalSeriesCriteria = 60,
                         eventPeriod = 30,
-                        targetMin = 0,
-                        colorSeed =1){# Cohort information
+                        targetMin = 0){# Cohort information
   cohortDescript <-cohortDescription()
   # Pull cohort data
   targetCohort<-cohortCycle(connectionDetails,
@@ -52,6 +54,13 @@ incidencePlot<-function(connectionDetails,
                             targetCohortIds,
                             identicalSeriesCriteria,
                             conditionCohortIds)
+  # Restrict Initial Series
+  if(restrictInitialSeries){
+  cohortFirstIndex<-targetCohort %>% subset(cycle == 1) %>% arrange(subjectId,cohortStartDate) %>% group_by(subjectId) %>% mutate(index= row_number())
+  indexedCohort<-left_join(targetCohort,cohortFirstIndex)
+  indexedCohort$index<-data.table::nafill(indexedCohort$index, type = "locf")
+  targetCohort<-indexedCohort %>% subset(index == 1) %>% select(-index)
+  }
 
   eventCohort<-cohortRecords(connectionDetails,
                              resultDatabaseSchema,
@@ -68,6 +77,8 @@ incidencePlot<-function(connectionDetails,
 
   # Event after target
   eventAfterTarget<-unique(na.omit(collapsedCohort %>% subset(cohortName %in% unique(eventCohort$cohortName)) %>% subset(cohort_cycle != prev_c_n_c)) %>% subset(cohortStartDate-prevDate<= eventPeriod))
+
+  if(restricInitialEvent){eventAfterTarget<-eventAfterTarget %>% arrange(subjectId,cohortStartDate)%>% group_by(subjectId) %>% slice(1)}
 
   summariseEvent <- unique(eventAfterTarget %>% group_by(prev_c_n_c))%>% summarise(n=n())
 
@@ -87,27 +98,17 @@ incidencePlot<-function(connectionDetails,
   # Plot data
   plotData<-left_join(collapsedSummarise,seperateNameIndex) %>% mutate(ratio = event/total)  %>% select(cycle,cohortName,event,total,ratio,cohort_cycle) %>% arrange(cohortName,cycle)
 
-  # Coefficient for Graph
-
-  k <- max(plotData$total[plotData$cohortName == (plotData %>% subset(total == max(total)))$cohortName] * 1) / min(plotData$ratio[plotData$cohortName == (plotData %>% subset(total == max(total)))$cohortName])
-
-  #Color
-  colorList<-c("#00AFBB", "#E7B800", "#FC4E07",'#00A6A9','#7963AB')
-  set.seed(colorSeed)
-  randomColorNum<-sample(1:length(colorList),length(unique(plotData$cohortName)))
-  selectedColor<-unlist(lapply(randomColorNum,function(x){colorList[x]}))
-
   # plot #1 - Incidence Rate
 
   p1 <- ggplot(na.omit(plotData), aes(x = cohort_cycle, y = ratio, group = cohortName, color = cohortName)) +
     theme_bw() +
     scale_x_discrete(limits = na.omit(plotData)$cohort_cycle) +
-    geom_point(size = 2) +
+    geom_point(size = 2, aes(fill = cohortName)) +
     geom_text(aes(label = percent(round(ratio, 2))),
               size = 4, hjust = -0.01, vjust = -0.2, fontface = "plain") +
     geom_smooth(size = 1.0, method = 'lm', aes(fill = cohortName)) +
-    scale_fill_manual(values = selectedColor) +
-    scale_color_manual(values = selectedColor) +
+    scale_fill_viridis(discrete=TRUE) +
+    scale_color_viridis(discrete=TRUE) +
     theme(legend.position='none',
           plot.title = element_text(size=20, face="bold", vjust=2),
           axis.title.x = element_blank(),
@@ -129,10 +130,10 @@ incidencePlot<-function(connectionDetails,
     geom_bar(aes(y = total, fill = cohortName), alpha = 0.2, stat = 'identity',show.legend = TRUE) +
     geom_bar(aes(y = event, fill = cohortName), alpha = 0.6, stat = 'identity',show.legend = FALSE) +
     geom_text(aes(y = total, label = paste(event,'/',total)),
-              angle = 90, size = 4, hjust = -0.1, vjust = 0.4,check_overlap = TRUE,show.legend = FALSE) +
+              angle = 90, size = 4, hjust = -0.1, vjust = 0.4,check_overlap = TRUE,show.legend = FALSE, position = position_dodge(width = 0.6)) +
     geom_text(aes(y = 0, label = cycle), angle = 90, size = 4, hjust = 1.25, vjust = 0.4,check_overlap = TRUE,show.legend = FALSE) +
-    scale_fill_manual(values = selectedColor) +
-    scale_color_manual(values = selectedColor) +
+    scale_fill_viridis(discrete=TRUE) +
+    scale_color_viridis(discrete=TRUE) +
     theme(legend.position='bottom',
           legend.title=element_blank(),
           plot.title = element_text(size=20, vjust=2),
@@ -149,4 +150,4 @@ incidencePlot<-function(connectionDetails,
 
   # multiplot
   p<-grid.arrange(p1, p2, ncol = 1)
-  return(p)}
+return(p)}

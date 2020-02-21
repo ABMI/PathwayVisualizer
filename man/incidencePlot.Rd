@@ -7,6 +7,7 @@ Compare the incidence of event in each treatment}
 \usage{
 incidencePlot(connectionDetails, resultDatabaseSchema, cohortTable,
   targetCohortIds, conditionCohortIds, eventCohortIds,
+  restrictInitialSeries = TRUE, restricInitialEvent = TRUE,
   identicalSeriesCriteria = 60, eventPeriod = 30, targetMin = 0,
   colorSeed = 1)
 }
