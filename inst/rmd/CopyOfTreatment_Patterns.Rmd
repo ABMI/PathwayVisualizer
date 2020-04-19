@@ -1,0 +1,197 @@
+---
+title: "Treatment characterization in patients with cancer"
+runtime: shiny
+output: 
+  flexdashboard::flex_dashboard:
+    orientation: rows
+    theme : yeti
+    vertical_layout: scroll
+---
+
+```{r global_packages}
+library(flexdashboard)
+library(shiny)
+library(CancerTxPathway)
+library(dplyr)
+library(highcharter)
+library(plotly)
+library(viridis)
+library(gridExtra)
+library(scales)
+library(hrbrthemes)
+library(ggplot2)
+library(data.table)
+```
+
+# Usage Patterns {data-orientation=rows}
+
+## Row
+
+### Treatment Pathway
+
+```{r, echo=FALSE,fig.keep='all'}
+fileNameNodes <- paste0(outputFileTitle,'_','SankeyNodes.csv')
+fileNameLinks <- paste0(outputFileTitle,'_','SankeyLinks.csv')
+nodesPath <- file.path(outputFolderPath, fileNameNodes)
+linksPath <- file.path(outputFolderPath, fileNameLinks)
+nodes<-read.csv(nodesPath,stringsAsFactors = F)
+links<-read.csv(linksPath,stringsAsFactors = F)
+networkD3::sankeyNetwork(Links = links, Nodes = nodes, Source = "source",Target = "target", Value = "value", NodeID = "name", fontSize = 12, nodeWidth = 30,sinksRight = FALSE)
+```
+
+## Row
+
+### Usage patterns of the treatment 1
+
+```{r, echo=FALSE}
+
+fileNameUsage <- paste0(outputFileTitle,'_','usagePatternRegimenProportion.csv')
+UsagePath <- file.path(outputFolderPath, fileNameUsage)
+plotData <- read.csv(UsagePath,stringsAsFactors = F)
+
+p2 <- ggplot(plotData, aes(x= Year,y= proportion, fill = Cohort)) + 
+    geom_area(alpha=0.6 , size=1)+ labs(y="Treatment (%)") + theme_Publication() + scale_fill_Publication() + scale_x_continuous(breaks=seq(fromYear,toYear,1)) + theme(axis.text.x=element_text(angle=45, hjust=1))
+
+plotly::ggplotly(p2) %>% layout(showlegend = TRUE)
+```
+
+## Row
+
+### Usage patterns of the treatment 2
+
+```{r, echo=FALSE}
+
+fileNameUsage <- paste0(outputFileTitle,'_','usagePatternRegimenProportion.csv')
+UsagePath <- file.path(outputFolderPath, fileNameUsage)
+plotData <- read.csv(UsagePath,stringsAsFactors = F)
+plotData %>% highcharter::hchart(.,type="line",hcaes(x = Year,y=proportion,group = Cohort)) %>% hc_xAxis(title = list(text = "Year")) %>% hc_yAxis(title = list(text = "Proportion of the regimen treated patients for total chemotherapy received patients (%)"),from = 0, to =70)
+
+```
+
+### Treatment Iteration Heatmap
+
+```{r, echo=FALSE}
+
+fileNameIteration<- paste0(outputFileTitle,'_','treatmentIterationHeatmap.csv')
+IterationPath <- file.path(outputFolderPath, fileNameIteration)
+heatmapPlotData <- read.csv(IterationPath,stringsAsFactors = F)
+treatmentIterationHeatmap(heatmapPlotData,
+                          maximumCycleNumber,
+                          minSubject)
+
+```
+
+Event Onset Timing {data-orientation=rows}
+================================
+
+Row {.tabset .tabset-fade}
+--------------------------------
+
+### Incidence of the adverse event after each treatment iteration - regression graph
+
+```{r, echo=FALSE,fig.keep='all'}
+
+fileNameEventIncidenceInCycle<- paste0(outputFileTitle,'_','EventIncidenceInCycle.csv')
+fileNameEventIncidenceInCyclePath <- file.path(outputFolderPath, fileNameEventIncidenceInCycle)
+plotData <- read.csv(fileNameEventIncidenceInCyclePath,stringsAsFactors = F)
+p1 <- ggplot(na.omit(plotData), aes(x = cohort_cycle, y = ratio, group = cohortName, color = cohortName)) +
+  theme_bw() +
+  scale_x_discrete(limits = na.omit(plotData)$cohort_cycle) +
+  geom_point(size = 2, aes(fill = cohortName)) +
+  geom_smooth(size = 1.0, method = 'lm', aes(fill = cohortName)) +
+  scale_fill_viridis(discrete=TRUE) +
+  scale_color_viridis(discrete=TRUE) +
+  theme(legend.position='none',
+        plot.title = element_text(size=20, face="bold", vjust=2),
+        axis.title.x = element_blank(),
+        axis.title.y = element_text(size=13),
+        axis.text = element_blank(),
+        axis.ticks.x = element_blank(),
+        axis.ticks.y = element_blank(),
+        panel.border = element_blank(),
+        panel.grid.major = element_blank(),
+        panel.grid.minor = element_blank()) +
+  labs(x = 'Iteration Number of treatment',y = 'Incidence Rate')
+plotly::ggplotly(p1,originalData = FALSE) %>% layout(showlegend = TRUE) %>% add_text(text = ~percent(round(y, 2)) ,textposition= "top right",showlegend = FALSE) 
+```
+
+### Incidence of the adverse event after each treatment iteration - histogram 
+
+```{r, echo=FALSE}
+
+# plot #2 - number of Incidence
+
+fileNameEventIncidenceInCycle<- paste0(outputFileTitle,'_','EventIncidenceInCycle.csv')
+fileNameEventIncidenceInCyclePath <- file.path(outputFolderPath, fileNameEventIncidenceInCycle)
+plotData <- read.csv(fileNameEventIncidenceInCyclePath,stringsAsFactors = F)
+plotData <- plotData %>% mutate(label = paste(event,'/',total))
+
+p2 <- ggplot(na.omit(plotData), aes(x = cohort_cycle, group = cohortName)) + theme_bw() +  scale_x_discrete(limits = na.omit(plotData)$cohort_cycle) +  geom_bar(aes(y = total, fill = cohortName), alpha = 0.4, stat = 'identity',show.legend = TRUE) +
+  geom_bar(aes(y = event, fill = cohortName), alpha = 0.6, stat = 'identity',show.legend = FALSE) +
+  geom_text(aes(y = total, label = paste(event,'/\n',total)),
+            angle = 90, size = 1.8, hjust = -0.1, vjust = 0.4,check_overlap = TRUE,show.legend = FALSE, position = position_dodge(width = 0.6)) + theme(legend.position='bottom',
+                                                                                                                                                        legend.title=element_blank(),
+                                                                                                                                                        plot.title = element_text(size=20, vjust=2),
+                                                                                                                                                        axis.title.x = element_text(size=13),
+                                                                                                                                                        axis.title.y = element_text(size=13),
+                                                                                                                                                        axis.ticks.x = element_blank(),
+                                                                                                                                                        axis.text = element_blank(),
+                                                                                                                                                        axis.ticks.y = element_blank(),
+                                                                                                                                                        panel.border = element_blank(),
+                                                                                                                                                        panel.grid.major = element_blank(),
+                                                                                                                                                        panel.grid.minor = element_blank()) + scale_fill_viridis(discrete=TRUE) + scale_y_continuous(limits = c(0, max(plotData$total * 1.1))) + labs(x = 'Iteration Number of treatment', y = 'Number of Incidence')
+
+ggplotly(p2) %>% style(textposition = 'top')
+```
+
+Row {data-width = 400}
+--------------------------------
+
+### Adverse event onset timing after first treatment {data-vertical_layout=scroll}
+
+```{r, echo=FALSE,fig.keep='all'}
+fileNameEventIncidenceInDates<- paste0(outputFileTitle,'_','EventIncidenceInDates.csv')
+fileNameEventIncidenceInDatesPath <- file.path(outputFolderPath, fileNameEventIncidenceInDates)
+savedata <- read.csv(fileNameEventIncidenceInDatesPath,stringsAsFactors = F)
+#
+plotdata <- as.data.frame(data.table::rbindlist(lapply(1:nrow(savedata),function(i){cohortName <- rep(savedata[i,]$cohortName,savedata[i,]$n)
+dateDiff <- rep(savedata[i,]$dateDiff,savedata[i,]$n)
+targerRecord<- data.frame(cohortName,dateDiff)
+return(targerRecord)})))
+#
+plotdata<-plotdata %>% mutate(category = ifelse(dateDiff<1,'d1',ifelse(dateDiff<=7,'d2-d8',ifelse(dateDiff<=14,'d9-d15',ifelse(dateDiff<=21,'d16-d22',ifelse(dateDiff<=30,'-d30','>d30'))))))
+plotdata$category <- factor(plotdata$category,levels = c('d1','d2-d8','d9-d15','d16-d22','-d30','>d30'))
+#
+p <- ggplot(plotdata,aes(x=cohortName, y=dateDiff)) +
+  geom_violin(size=0.2,scale = 'width') +
+  ggbeeswarm::geom_quasirandom(size = 1,aes(color = category))+
+  scale_color_viridis(discrete=TRUE) + theme_ipsum() +
+  theme(
+    legend.position= 'right',legend.title=element_blank()
+  ) +
+  coord_flip() +
+  xlab("") +
+  ylab("Time from discharge (days)")
+
+plotly::ggplotly(p)
+
+```   
+
+About
+================================
+
+Copyright 2020 Observational Health Data Sciences and Informatics
+
+This file is part of CancerTxPathway
+
+Licensed under the Apache License, Version 2.0 (the "License");
+you may not use this file except in compliance with the License.
+You may obtain a copy of the License at
+
+http://www.apache.org/licenses/LICENSE-2.0
+
+Unless required by applicable law or agreed to in writing, software
+distributed under the License is distributed on an "AS IS" BASIS,
+WITHOUT WARRANTIES OR CONDITIONS OF ANY KIND, either express or implied.
+See the License for the specific language governing permissions and
+limitations under the License.
