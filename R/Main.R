@@ -22,22 +22,23 @@ executeVisualization <- function(connectionDetails,
                                  oracleTempSchema,
                                  cohortDatabaseSchema,
                                  cdmDatabaseSchema,
-                                 oncologyDatabaseSchema,
+                                 oncologyDatabaseSchema = NULL,
                                  vocaDatabaseSchema,
                                  cohortTable,
                                  episodeTable,
-                                 conditionCohortIds = NULL,
                                  outputFolderPath,
                                  outputFileTitle,
                                  combinationWindow = 5,
                                  maximumPathLength = 3,
                                  minimumCellCount = 5,
+                                 conditionCohortIds = NULL,
                                  targetCohortIds,
-                                 surgeryCohortIds,
+                                 eventCohortIds,
+                                 surgeryCohortIds = NULL,
                                  adverseCohortIds,
-                                 visualize = TRUE,
                                  cohortTableCreation = FALSE,
-                                 episodeCohortGeneration = FALSE
+                                 episodeCohortGeneration = FALSE,
+                                 setting = TRUE
 ){
 
   # Create cohort table
@@ -104,29 +105,41 @@ executeVisualization <- function(connectionDetails,
   # Extract raw data for plot
 
   # 1. Usage pattern graph (PlotRaw_UsagePattern.R)
-  p1_data <- plotRaw_1(numberedCohort,
+  fromYear <- as.character(min(numberedCohort$cohortStartDate),'%Y')
+  toYear <- as.character(max(numberedCohort$cohortStartDate),'%Y')
+
+  p1_data <- plotRaw_1(fromYear,
+                       toYear,
+                       numberedCohort,
                        cohortDescript,
                        outputFileTitle,
-                       outputFolderPath)
+                       outputFolderPath,
+                       saveFile = TRUE)
 
   # 2. Treatment Iteration heatmap (PlotRaw_CycleHeatmap.R)
   p2_data <- plotRaw_2(targetCohortIds,
                        numberedCohort,
                        outputFileTitle,
-                       outputFolderPath)
+                       outputFolderPath,
+                       saveFile = TRUE)
 
   # 3. Treatment Pathway - including table (PlotRaw_TreatmentPathway.R)
   p3_data <- plotRaw_3(connectionDetails,
                        cohortDatabaseSchema,
                        cohortTable,
-                       eventCohortIds = surgeryCohortIds,
+                       eventCohortIds,
+                       conditionCohortIds,
+                       surgeryCohortIds,
                        numberedCohort,
                        cohortDescript,
                        combinationWindow,
                        maximumPathLength,
+                       minimumPathLength = 2,
                        minimumCellCount,
                        outputFileTitle,
-                       outputFolderPath)
+                       outputFolderPath,
+                       saveFile = TRUE,
+                       setting)
 
   # 4. Event incidence in each cycle (PlotRaw_AdverseOnsetIncidence.R)
   p4_data <- plotRaw_4(connectionDetails,
@@ -135,11 +148,13 @@ executeVisualization <- function(connectionDetails,
                        numberedCohort,
                        cohortDescript,
                        eventCohortIds = adverseCohortIds,
+                       treatmentEffectDates = 3,
                        restrictInitialTreatment = T,
                        restrictInitialEvent = T,
                        minimumCellCount,
                        outputFileTitle,
-                       outputFolderPath)
+                       outputFolderPath,
+                       saveFile = TRUE)
 
   # 5. Event onset timing (PlotRaw_AdverseOnset.R)
   p5_data <- plotRaw_5(connectionDetails,
@@ -151,18 +166,20 @@ executeVisualization <- function(connectionDetails,
                        treatmentEffectDates = 3,
                        observationDate = 60,
                        outputFileTitle,
-                       outputFolderPath)
+                       outputFolderPath,
+                       saveFile = TRUE)
 
-  plots <- Visualization(p1_data,
-                         p2_data,
-                         p3_data,
-                         p4_data,
-                         p5_data,
-                         outputFileTitle,
-                         outputFolderPath,
-                         maximumPathLength,
-                         minimumCellCount,
-                         visualize)
+  ParallelLogger::logInfo("Rendering plot")
 
-  return(if(visualize){plots})
+  renderHtml(p1_data,
+             p2_data,
+             p3_data,
+             p4_data,
+             p5_data,
+             outputFileTitle,
+             outputFolderPath,
+             maximumPathLength,
+             minimumCellCount,
+             setting)
+
 }

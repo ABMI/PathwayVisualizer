@@ -21,7 +21,8 @@
 plotRaw_2 <- function(targetCohortIds,
                       numberedCohort,
                       outputFileTitle,
-                      outputFolderPath){
+                      outputFolderPath,
+                      saveFile = TRUE){
 
   # 1. Usage pattern graph
   # 2. Treatment Iteration heatmap
@@ -43,9 +44,10 @@ plotRaw_2 <- function(targetCohortIds,
   )
 
   # Write raw data
+if(saveFile){
   fileName <- paste0(outputFileTitle,'_','TreatmentHeatmap.csv')
   write.csv(heatmapPlotData, file.path(outputFolderPath, fileName),row.names = F)
-
+}
   return(heatmapPlotData)
 
   # 3. Treatment Pathway - including table

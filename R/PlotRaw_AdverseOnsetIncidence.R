@@ -23,11 +23,13 @@ plotRaw_4 <- function(connectionDetails,
                       numberedCohort,
                       cohortDescript,
                       eventCohortIds,
+                      treatmentEffectDates,
                       restrictInitialTreatment = T,
                       restrictInitialEvent = T,
                       minimumCellCount,
                       outputFileTitle,
-                      outputFolderPath){
+                      outputFolderPath,
+                      saveFile = TRUE){
 
   # 1. Usage pattern graph
   # 2. Treatment Iteration heatmap
@@ -49,14 +51,22 @@ plotRaw_4 <- function(connectionDetails,
   eventCohort <- dplyr::left_join(eventCohort,cohortDescript, by= c("cohortDefinitionId"="cohortDefinitionId"))
   eventCohort <- unique(eventCohort %>% mutate (cycle = 0) %>% select(-type) %>% subset(subjectId %in% numberedCohort$subjectId)) %>% select(-conceptId)
 
+  eventCohort <- data.table::rbindlist(lapply(unique(numberedCohort$subjectId),function(i){
+    targetData <- numberedCohort %>% subset(subjectId == i)
+    eventData <- eventCohort %>% subset(subjectId == i)
+    for( x in 1:nrow(targetData)){
+      eventData$cohortStartDate[eventData$cohortStartDate <= targetData$cohortStartDate[x]+treatmentEffectDates & eventData$cohortStartDate >= targetData$cohortStartDate[x] - treatmentEffectDates] <- NA
+    }
+    return(eventData)
+  }))
   # Cohort name cycle
   collapsedCohort <- rbind(numberedCohort,eventCohort) %>% arrange(subjectId,cohortStartDate) %>% mutate(cohort_cycle = paste0(cycle,'_',cohortName))
 
   # Prev record
   collapsedCohort <- collapsedCohort %>% arrange(subjectId,cohortStartDate,desc(cohort_cycle)) %>% group_by(subjectId) %>% mutate(prev_c_n_c = lag(cohort_cycle)) %>% mutate(prevDate = lag(cohortStartDate)) %>% ungroup()
 
-  # Event after target
-  eventAfterTarget <- unique(na.omit(collapsedCohort %>% subset(cohortName %in% unique(eventCohort$cohortName)) %>% subset(cohort_cycle != prev_c_n_c)) %>% subset(cohortStartDate-prevDate<= eventPeriod))
+  # Maximum date of event onset
+  eventAfterTarget <- unique(na.omit(collapsedCohort %>% subset(cohortName %in% unique(eventCohort$cohortName)) %>% subset(cohort_cycle != prev_c_n_c)) %>% subset(cohortStartDate-prevDate <= 30))
 
   # Restrict first event
   if(restrictInitialEvent){
@@ -80,9 +90,10 @@ plotRaw_4 <- function(connectionDetails,
   # Plot data
   plotData <- left_join(collapsedSummarise,seperateNameIndex) %>% mutate(ratio = event/total) %>% select(cycle,cohortName,event,total,ratio,cohort_cycle) %>% arrange(cohortName,cycle)
 
+  if(saveFile){
     fileName <- paste0(outputFileTitle,'_','AdverseOnsetIncidence.csv')
     write.csv(plotData, file.path(outputFolderPath, fileName),row.names = F)
-
+}
     return(plotData)
   # 5. Event onset timing
 }

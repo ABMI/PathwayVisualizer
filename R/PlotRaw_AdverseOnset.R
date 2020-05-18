@@ -26,7 +26,8 @@ plotRaw_5 <- function(connectionDetails,
                       treatmentEffectDates = 3,
                       observationDate = 60,
                       outputFileTitle,
-                      outputFolderPath){
+                      outputFolderPath,
+                      saveFile = TRUE){
 
   # 1. Usage pattern graph
   # 2. Treatment Iteration heatmap
@@ -58,7 +59,7 @@ plotRaw_5 <- function(connectionDetails,
       eventData$cohortStartDate[eventData$cohortStartDate <= targetData$cohortStartDate[x]+treatmentEffectDates & eventData$cohortStartDate >= targetData$cohortStartDate[x] - treatmentEffectDates] <- NA
     }
     return(eventData)
-    }))
+  }))
 
   eventCohort <- na.omit(eventCohort)
   eventCohort <- as.data.frame(eventCohort)
@@ -94,9 +95,10 @@ plotRaw_5 <- function(connectionDetails,
   plotdata<-plotdata %>% mutate(category = ifelse(dateDiff<1,'d1',ifelse(dateDiff<=7,'d2-d8',ifelse(dateDiff<=14,'d9-d15',ifelse(dateDiff<=21,'d16-d22',ifelse(dateDiff<=29,'-d30','>d30'))))))
   plotdata$category <- factor(plotdata$category,levels = c('d1','d2-d8','d9-d15','d16-d22','-d30','>d30'))
 
-  fileName <- paste0(outputFileTitle,'_','AdverseOnset.csv')
-  write.csv(savedata, file.path(outputFolderPath, fileName),row.names = F)
-
+  if(saveFile){
+    fileName <- paste0(outputFileTitle,'_','AdverseOnset.csv')
+    write.csv(savedata, file.path(outputFolderPath, fileName),row.names = F)
+  }
   return(savedata)
 
 }

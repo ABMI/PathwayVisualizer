@@ -17,10 +17,13 @@
 #' @import data.table
 #' @import dplyr
 #' @export
-plotRaw_1 <- function(numberedCohort,
+plotRaw_1 <- function(fromYear,
+                      toYear,
+                      numberedCohort,
                       cohortDescript,
                       outputFileTitle,
-                      outputFolderPath){
+                      outputFolderPath,
+                      saveFile = TRUE){
 
   # 1. Usage pattern graph
 
@@ -46,8 +49,6 @@ plotRaw_1 <- function(numberedCohort,
 
   colnames(numberedCohort) <- c('Year','Cohort','proportion')
   numberedCohort$Year <- as.integer(numberedCohort$Year)
-  fromYear <- min(numberedCohort$Year)
-  toYear <- max(numberedCohort$Year)
   Year <- rep(c(fromYear:toYear),length(unique(numberedCohort$Cohort)))
   Cohort <- sort(rep(unique(numberedCohort$Cohort),length(c(fromYear:toYear))))
   index <- data.frame(Year,Cohort)
@@ -57,9 +58,10 @@ plotRaw_1 <- function(numberedCohort,
   plotData[is.na(plotData)] <- 0
 
   # Write raw data
+  if(saveFile){
   fileName <- paste0(outputFileTitle,'_','RegimenUsagePattern.csv')
   write.csv(plotData, file.path(outputFolderPath, fileName),row.names = F)
-
+}
   return(plotData)
 
   # 2. Treatment Iteration heatmap
