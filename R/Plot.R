@@ -120,7 +120,7 @@ plot4 <-  function(p4_data,type = 'histogram'){
       ylim(0,100) + scale_x_reverse(breaks = c(1:max(Percent_labeled$cycle))) + geom_text(aes(x = cycle,y = ratio, label = label), show.legend = FALSE, vjust = 0.2,hjust = -0.05, size = 3.5, position = position_dodge(width=0.6)) + coord_flip() + xlab("Cycle") +
       ylab("")
 
-    p4_plot  <-ggplotly(p2) %>% style(textposition = 'middle right')
+    p4_plot  <- ggplotly(p2) %>% style(textposition = 'middle right')
 
   }
   return(p4_plot)
@@ -143,7 +143,7 @@ plot5 <- function(p5_data){
   p <- ggplot(plotdata,aes(x=cohortName, y=dateDiff)) +
     geom_violin(size=0.2,scale = 'width') +
     ggbeeswarm::geom_quasirandom(size = 1,aes(color = category))+
-    scale_color_viridis(discrete=TRUE) + theme_ipsum() +
+    scale_colour_Publication + theme_ipsum() +
     theme(
       legend.position= 'right',legend.title=element_blank()
     ) +

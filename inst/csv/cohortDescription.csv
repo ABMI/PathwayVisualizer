@@ -68,3 +68,4 @@ cohortDefinitionId,cohortName,type,conceptId
 315,Ceftriaxone,,
 314,Hospital-acquired pneumonia,,
 67,ANCUnder1500,event,
+68,Febrile Neutropenia,event,

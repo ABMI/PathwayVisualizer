@@ -92,7 +92,7 @@ plotRaw_5 <- function(connectionDetails,
   targerRecord<- data.frame(cohortName,dateDiff)
   return(targerRecord)})))
 
-  plotdata<-plotdata %>% mutate(category = ifelse(dateDiff<1,'d1',ifelse(dateDiff<=7,'d2-d8',ifelse(dateDiff<=14,'d9-d15',ifelse(dateDiff<=21,'d16-d22',ifelse(dateDiff<=29,'-d30','>d30'))))))
+  plotdata<-plotdata %>% mutate(category = ifelse(dateDiff == 0,'d1',ifelse(dateDiff <= 7 & dateDiff >= 1,'d2-d8',ifelse(dateDiff<=14,'d9-d15',ifelse(dateDiff<=21,'d16-d22',ifelse(dateDiff<=29,'-d30','>d30'))))))
   plotdata$category <- factor(plotdata$category,levels = c('d1','d2-d8','d9-d15','d16-d22','-d30','>d30'))
 
   if(saveFile){
