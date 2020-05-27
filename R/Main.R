@@ -34,11 +34,9 @@ executeVisualization <- function(connectionDetails,
                                  conditionCohortIds = NULL,
                                  targetCohortIds,
                                  eventCohortIds,
-                                 surgeryCohortIds = NULL,
                                  adverseCohortIds,
                                  cohortTableCreation = FALSE,
-                                 episodeCohortGeneration = FALSE,
-                                 setting = TRUE
+                                 episodeCohortGeneration = FALSE
 ){
 
   # Create cohort table
@@ -129,7 +127,6 @@ executeVisualization <- function(connectionDetails,
                        cohortTable,
                        eventCohortIds,
                        conditionCohortIds,
-                       surgeryCohortIds,
                        numberedCohort,
                        cohortDescript,
                        combinationWindow,
@@ -138,8 +135,7 @@ executeVisualization <- function(connectionDetails,
                        minimumCellCount,
                        outputFileTitle,
                        outputFolderPath,
-                       saveFile = TRUE,
-                       setting)
+                       saveFile = TRUE)
 
   # 4. Event incidence in each cycle (PlotRaw_AdverseOnsetIncidence.R)
   p4_data <- plotRaw_4(connectionDetails,
@@ -179,7 +175,6 @@ executeVisualization <- function(connectionDetails,
              outputFileTitle,
              outputFolderPath,
              maximumPathLength,
-             minimumCellCount,
-             setting)
+             minimumCellCount)
 
 }

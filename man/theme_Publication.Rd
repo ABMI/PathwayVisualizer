@@ -6,6 +6,9 @@
 \usage{
 theme_Publication(base_size = 14)
 }
+\value{
+
+}
 \description{
 Publication
 }

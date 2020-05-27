@@ -63,7 +63,7 @@ Column {data-width=650}
 
 ```{r, echo=FALSE}
 
-PathwayVisualizer::plot3(p3_data[[1]])
+PathwayVisualizer::plot3(p3_data)
 
 ```
 
@@ -74,69 +74,9 @@ Column {data-width=350}
 
 ```{r, echo=FALSE,fig.keep='all'}
 
-pathways <- p3_data[[1]]$pathways
+pathways <- p3_data$pathways
 knitr::kable(pathways)
 
-```
-
-Treatment Pathway - adjuvant
-============================
-
-Column {data-width=650}
-----------------------------
-
-```{r, eval = setting}
-knitr::asis_output("### Treatment Pathway - adjuvant")
-```
-
-```{r, echo=FALSE,fig.keep='all',results = 'asis', eval = setting}
-if(setting){
-PathwayVisualizer::plot3(p3_data[[3]])
-}
-```
-
-Column {data-width=350}
-----------------------------
-
-```{r, eval = setting}
-knitr::asis_output("### Pathway raw data - adjuvant")
-```
-
-```{r, echo=FALSE,fig.keep='all',results = 'asis', eval = setting}
-if(setting){
-  pathways_a <- p3_data[[3]]$pathways
-  knitr::kable(pathways_a)
-}
-```
-
-Treatment Pathway - neoadjuvant / palliative care
-============================
-
-Column {data-width=650}
-----------------------------
-
-```{r, eval = setting}
-knitr::asis_output("### Treatment Pathway - neoadjuvant / palliative care")
-```
-
-```{r, echo=FALSE,fig.keep='all',results = 'asis', eval = setting}
-if(setting){
-PathwayVisualizer::plot3(p3_data[[2]])
-}
-```
-
-Column {data-width=350}
-----------------------------
-
-```{r, eval = setting}
-knitr::asis_output("### Pathway raw data - neoadjuvant")
-```
-
-```{r, echo=FALSE,fig.keep='all',results = 'asis', eval = setting}
-if(setting){
-  pathways_na <- p3_data[[2]]$pathways
-  knitr::kable(pathways_na)
-}
 ```
 
 Event Onset Timing

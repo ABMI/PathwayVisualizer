@@ -22,7 +22,6 @@ plotRaw_3 <- function(connectionDetails,
                       cohortTable,
                       eventCohortIds,
                       conditionCohortIds = NULL,
-                      surgeryCohortIds,
                       numberedCohort,
                       cohortDescript,
                       combinationWindow,
@@ -31,8 +30,7 @@ plotRaw_3 <- function(connectionDetails,
                       minimumCellCount,
                       outputFileTitle,
                       outputFolderPath,
-                      saveFile = TRUE,
-                      setting = TRUE){
+                      saveFile = TRUE){
 
   # 1. Usage pattern graph
   # 2. Treatment Iteration heatmap
@@ -92,7 +90,7 @@ plotRaw_3 <- function(connectionDetails,
       eventAndTarget <- as.data.frame(eventAndTarget)
     }
 
-  # If regimens apart from each other less than combinationWindow, collapse using '/'
+  # If treatment apart from each other less than combinationWindow, collapse using '+'
 
   collapsedRecords <- data.table::rbindlist(lapply(unique(eventAndTarget$subjectId),function(targetSubjectId){
     reconstructedRecords <- data.frame()
@@ -119,79 +117,51 @@ plotRaw_3 <- function(connectionDetails,
 
   # Maximum path length in graph
   eventAndTarget <- eventAndTarget %>% group_by(subjectId) %>% arrange(subjectId,cohortStartDate) %>% mutate(rowNumber = row_number()) %>% subset(rowNumber <= maximumPathLength) %>% select(subjectId,cohortName,rowNumber) %>% mutate(nameOfConcept = paste0(rowNumber,'_',cohortName)) %>% ungroup()
+
   # Padding only first line node
   eventAndTarget <- rbind(eventAndTarget,eventAndTarget %>% subset(rowNumber == 1) %>% subset(!subjectId %in% (eventAndTarget %>% subset(rowNumber == 2))$subjectId) %>% mutate(rowNumber = 2, cohortName = "received only first line", nameOfConcept = "2_received only first line")) %>% arrange(subjectId, rowNumber)
 
-  if(setting){
-  # Split neoadjuvant / adjuvant
-  neoadjuvantSubjectId <- eventAndTarget %>% subset(rowNumber == 1 & cohortName == (cohortDescript %>% subset(cohortDefinitionId == surgeryCohortIds))[,2]) %>% select(subjectId)
-
-  adjuvant <- eventAndTarget %>% subset(subjectId %in% neoadjuvantSubjectId$subjectId)
-  adjuvant <- list(setting = adjuvant, settingName = 'adjuvant')
-
-  neoadjuvant <- eventAndTarget %>% subset(!subjectId %in% neoadjuvantSubjectId$subjectId)
-  neoadjuvant <- list(setting = neoadjuvant, settingName = 'neoadjuvant')
-
-  settings <- list(neoadjuvant,adjuvant)
-
-  settingRaw <- lapply(settings,afterSettingDefined,minimumCellCount = minimumCellCount,
-                       maximumPathLength = maximumPathLength,
-                       saveFile = saveFile,
-                       outputFolderPath = outputFolderPath,
-                       outputFileTitle = outputFileTitle)}
-
-  noSettingData <- list(setting = eventAndTarget, settingName = 'total')
-
-  noSettingRaw <- afterSettingDefined(settingDefinedData = noSettingData,
+  rawData <- generateLinksAndNodes(targetData = eventAndTarget,
                                       minimumCellCount,
                                       maximumPathLength,
                                       saveFile,
                                       outputFolderPath,
                                       outputFileTitle)
 
-  if(setting){
-    rawDataList <- append(list(noSettingRaw),settingRaw)
-  }else{
-    rawDataList <- list(noSettingRaw)
-    }
-
   # 4. Event incidence in each cycle
   # 5. Event onset timing
-  return(rawDataList)
+  return(rawData)
 
 }
 
 #' @export
-afterSettingDefined <- function(settingDefinedData,
+generateLinksAndNodes <- function(targetData,
                                 minimumCellCount,
                                 maximumPathLength,
                                 saveFile,
                                 outputFolderPath,
                                 outputFileTitle){
 
-  settingDataName <- settingDefinedData$settingName
-  settingDefinedData <- settingDefinedData$setting
-
   # Exclude patients until minimum nodes cell count under criteria
 
-  nodePatientNo <- settingDefinedData %>% group_by(nameOfConcept) %>% summarise(n=n())
+  nodePatientNo <- targetData %>% group_by(nameOfConcept) %>% summarise(n=n())
 
   while(min(nodePatientNo$n) < minimumCellCount){
 
-    nodePatientNo <- settingDefinedData %>% group_by(nameOfConcept) %>% summarise(n=n())
+    nodePatientNo <- targetData %>% group_by(nameOfConcept) %>% summarise(n=n())
 
-    settingDefinedData <- settingDefinedData %>% subset(!subjectId %in% (settingDefinedData %>% subset(nameOfConcept %in% (nodePatientNo %>% subset(n < minimumCellCount))$nameOfConcept))$subjectId)
+    targetData <- targetData %>% subset(!subjectId %in% (targetData %>% subset(nameOfConcept %in% (nodePatientNo %>% subset(n < minimumCellCount))$nameOfConcept))$subjectId)
   }
 
   # Nodes
   treatmentRatio <- data.table::rbindlist(lapply(1:maximumPathLength,function(x){
-    result <- settingDefinedData %>% subset(rowNumber==x) %>% group_by(nameOfConcept) %>% summarise(n=n()) %>% mutate(ratio=round(n/sum(n)*100,1))
+    result <- targetData %>% subset(rowNumber==x) %>% group_by(nameOfConcept) %>% summarise(n=n()) %>% mutate(ratio=round(n/sum(n)*100,1))
     return(result)}
   )
   )
 
   # Label
-  label <- unique(settingDefinedData %>% select(cohortName,nameOfConcept) %>% arrange(nameOfConcept))
+  label <- unique(targetData %>% select(cohortName,nameOfConcept) %>% arrange(nameOfConcept))
   label <- label %>% mutate(num = seq(from = 0,length.out = nrow(label)))
 
   label <- dplyr::left_join(treatmentRatio,label,by=c("nameOfConcept"="nameOfConcept")) %>% mutate(name = paste0(cohortName,' (n=',n,', ',ratio,'%)'))
@@ -202,7 +172,7 @@ afterSettingDefined <- function(settingDefinedData,
   nodes <- data.frame(nodes)
 
   # Pivot table
-  pivotRecords <- reshape2::dcast(settingDefinedData,subjectId ~ rowNumber, value.var="nameOfConcept")
+  pivotRecords <- reshape2::dcast(targetData,subjectId ~ rowNumber, value.var="nameOfConcept")
 
   # Write pathway table
   pathwayRecords <- lapply(1 : nrow(pivotRecords), function(x){
@@ -226,11 +196,11 @@ afterSettingDefined <- function(settingDefinedData,
   pathwayTable <- as.data.frame(pathwayTable)
 
   if(saveFile){
-    fileNamePathway <- paste0(settingDataName,'_',outputFileTitle,'_','pathway.csv')
+    fileNamePathway <- paste0(outputFileTitle,'_','pathway.csv')
     write.csv(pathwayTable, file.path(outputFolderPath, fileNamePathway),row.names = F)
   }
   # Link
-  link <- data.table::rbindlist(lapply(2:max(settingDefinedData$rowNumber),function(x){
+  link <- data.table::rbindlist(lapply(2:max(targetData$rowNumber),function(x){
     source <- pivotRecords[,x]
     target <- pivotRecords[,x+1]
     link <-data.frame(source,target)
@@ -259,9 +229,9 @@ afterSettingDefined <- function(settingDefinedData,
   # Write raw data
   treatment <- list(nodes=nodes,links=links,pathways = pathwayTable)
   if(saveFile){
-    fileNameNodes <- paste0(settingDataName,'_',outputFileTitle,'_','SankeyNodes.csv')
+    fileNameNodes <- paste0(outputFileTitle,'_','SankeyNodes.csv')
     write.csv(nodes, file.path(outputFolderPath, fileNameNodes),row.names = F)
-    fileNameLinks <- paste0(settingDataName,'_',outputFileTitle,'_','SankeyLinks.csv')
+    fileNameLinks <- paste0(outputFileTitle,'_','SankeyLinks.csv')
     write.csv(links, file.path(outputFolderPath, fileNameLinks),row.names = F)
   }
 

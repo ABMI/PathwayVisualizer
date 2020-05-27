@@ -29,17 +29,12 @@ eventCohortIds <- c(42,62) # Colectomy,Death,Radiation...
 adverseCohortIds <- 45 # Neutropenia
 conditionCohortIds <- NULL
 
-# discrete Neo / adjuvant setting by
-surgeryCohortIds <- 42
-
 combinationWindow <- 5
 maximumPathLength <- 3
 minimumCellCount <- 5
 
 cohortTableCreation <- FALSE
 episodeCohortGeneration <- FALSE
-
-
 
 executeVisualization(connectionDetails,
                      oracleTempSchema,
@@ -57,7 +52,6 @@ executeVisualization(connectionDetails,
                      conditionCohortIds,
                      targetCohortIds,
                      eventCohortIds,
-                     surgeryCohortIds,
                      adverseCohortIds,
                      cohortTableCreation,
                      episodeCohortGeneration)

@@ -143,7 +143,7 @@ plot5 <- function(p5_data){
   p <- ggplot(plotdata,aes(x=cohortName, y=dateDiff)) +
     geom_violin(size=0.2,scale = 'width') +
     ggbeeswarm::geom_quasirandom(size = 1,aes(color = category))+
-    scale_colour_Publication + theme_ipsum() +
+    scale_colour_Publication() + theme_ipsum() +
     theme(
       legend.position= 'right',legend.title=element_blank()
     ) +
