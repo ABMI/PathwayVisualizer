@@ -26,17 +26,20 @@ executeVisualization <- function(connectionDetails,
                                  vocaDatabaseSchema,
                                  cohortTable,
                                  episodeTable,
+                                 conditionCohortTable,
                                  outputFolderPath,
                                  outputFileTitle,
                                  combinationWindow = 5,
                                  maximumPathLength = 3,
+                                 minimumPathLength = 3,
                                  minimumCellCount = 5,
                                  conditionCohortIds = NULL,
                                  targetCohortIds,
                                  eventCohortIds,
                                  adverseCohortIds,
                                  cohortTableCreation = FALSE,
-                                 episodeCohortGeneration = FALSE
+                                 episodeCohortGeneration = FALSE,
+                                 heatmapColor = 'blue'
 ){
 
   # Create cohort table
@@ -87,7 +90,7 @@ executeVisualization <- function(connectionDetails,
 
   numberedCohort <- cohortNumbering(connectionDetails,
                                     cohortDatabaseSchema,
-                                    cohortTable,
+                                    conditionCohortTable,
                                     conditionCohortIds,
                                     cohortRecords,
                                     cohortDescript,
@@ -131,7 +134,7 @@ executeVisualization <- function(connectionDetails,
                        cohortDescript,
                        combinationWindow,
                        maximumPathLength,
-                       minimumPathLength = 2,
+                       minimumPathLength,
                        minimumCellCount,
                        outputFileTitle,
                        outputFolderPath,
@@ -175,6 +178,7 @@ executeVisualization <- function(connectionDetails,
              outputFileTitle,
              outputFolderPath,
              maximumPathLength,
-             minimumCellCount)
+             minimumCellCount,
+             heatmapColor)
 
 }

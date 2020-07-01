@@ -24,7 +24,7 @@ renderHtml <- function(p1_data = NULL,
                        outputFolderPath,
                        maximumPathLength,
                        minimumCellCount,
-                       setting = TRUE){
+                       heatmapColor){
 
   # 1. Usage pattern graph
   if(is.null(p1_data)){
@@ -34,21 +34,26 @@ renderHtml <- function(p1_data = NULL,
   }
   # 2. Treatment Iteration heatmap
   if(is.null(p2_data)){
-    fileNameIteration<- paste0(outputFileTitle,'_','TreatmentHeatmap.csv')
+    fileNameIteration <- paste0(outputFileTitle,'_','TreatmentHeatmap.csv')
     IterationPath <- file.path(outputFolderPath, fileNameIteration)
     p2_data <- read.csv(IterationPath,stringsAsFactors = F)
   }
   # 3. Treatment Pathway - including table
   if(is.null(p3_data)){
-    if(setting){
-    settings <- c('total_','adjuvant_','neoadjuvant_')
-    p3_data <- lapply(settings,localPathway,outputFileTitle = outputFileTitle,outputFolderPath = outputFolderPath)}else{
 
-      settings <- c('total_')
-      p3_data <- lapply(settings,localPathway,outputFileTitle = outputFileTitle,outputFolderPath = outputFolderPath)
+    fileNamePathway <- paste0(outputFileTitle,'_','pathway.csv')
+    PathwayPath <- file.path(outputFolderPath, fileNamePathway)
 
-    }
+    FileNameNodes <- paste0(outputFileTitle,'_','SankeyNodes.csv')
+    FileNameLinks <- paste0(outputFileTitle,'_','SankeyLinks.csv')
+    NodesPath <- file.path(outputFolderPath, FileNameNodes)
+    LinksPath <- file.path(outputFolderPath, FileNameLinks)
 
+    nodes <- read.csv(NodesPath,stringsAsFactors = F)
+    links <- read.csv(LinksPath,stringsAsFactors = F)
+    pathways <- read.csv(PathwayPath,stringsAsFactors = F)
+
+    p3_data <- list(nodes = nodes,links = links,pathways = pathways)
 
   }
   # 4. Event incidence in each cycle
@@ -70,12 +75,12 @@ renderHtml <- function(p1_data = NULL,
                  outputFileTitle = outputFileTitle,
                  maximumPathLength = maximumPathLength,
                  minimumCellCount = minimumCellCount,
+                 heatmapColor = heatmapColor,
                  p1_data = p1_data,
                  p2_data = p2_data,
                  p3_data = p3_data,
                  p4_data = p4_data,
-                 p5_data = p5_data,
-                 setting = setting)
+                 p5_data = p5_data)
 
   rmarkdown::render(pathToRmd,"flex_dashboard",output_dir = outputFolderPath,output_file = paste0(outputFileTitle,'.','html'),
                     params = params,

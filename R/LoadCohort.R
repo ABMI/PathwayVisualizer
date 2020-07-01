@@ -57,7 +57,7 @@ loadCohort <- function(connectionDetails,
 #' @export
 cohortNumbering <- function(connectionDetails,
                             cohortDatabaseSchema,
-                            cohortTable,
+                            conditionCohortTable,
                             conditionCohortIds = NULL,
                             cohortRecords,
                             cohortDescript,
@@ -69,7 +69,7 @@ cohortNumbering <- function(connectionDetails,
 
     conditionCohort <- loadCohort(connectionDetails,
                                   cohortDatabaseSchema,
-                                  cohortTable,
+                                  conditionCohortTable,
                                   conditionCohortIds)
 
     cycleCohort <- cohortRecords %>% subset(subjectId %in% conditionCohort$subjectId)

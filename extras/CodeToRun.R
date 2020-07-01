@@ -31,28 +31,41 @@ conditionCohortIds <- NULL
 
 combinationWindow <- 5
 maximumPathLength <- 3
+minimumPathLength <- 1
 minimumCellCount <- 5
 
 cohortTableCreation <- FALSE
 episodeCohortGeneration <- FALSE
+heatmapColor <- 'blue'
 
 executeVisualization(connectionDetails,
                      oracleTempSchema,
                      cohortDatabaseSchema,
                      cdmDatabaseSchema,
-                     oncologyDatabaseSchema,
+                     oncologyDatabaseSchema = NULL,
                      vocaDatabaseSchema,
                      cohortTable,
                      episodeTable,
+                     conditionCohortTable,
                      outputFolderPath,
                      outputFileTitle,
-                     combinationWindow,
-                     maximumPathLength,
-                     minimumCellCount,
-                     conditionCohortIds,
+                     combinationWindow = 5,
+                     maximumPathLength = 3,
+                     minimumPathLength = 3,
+                     minimumCellCount = 5,
+                     conditionCohortIds = NULL,
                      targetCohortIds,
                      eventCohortIds,
                      adverseCohortIds,
-                     cohortTableCreation,
-                     episodeCohortGeneration)
+                     cohortTableCreation = FALSE,
+                     episodeCohortGeneration = FALSE,
+                     heatmapColor = 'blue')
+
+patternRaw(connectionDetails,
+           cohortDatabaseSchema,
+           cohortTable,
+           regimenCohortIds,
+           eventCohortIds,
+           interestCohortIds)
+
 

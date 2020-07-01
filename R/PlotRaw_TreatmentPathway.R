@@ -63,7 +63,7 @@ plotRaw_3 <- function(connectionDetails,
                               eventCohortIds)
 
     eventCohort <- dplyr::left_join(eventCohort,cohortDescript, by= c("cohortDefinitionId"="cohortDefinitionId"))
-
+    eventCohort <- eventCohort %>% subset(subjectId %in% unique(cohortData$subjectId))
     if(!is.null(conditionCohortIds)){eventCohort <- eventCohort %>% subset(subjectId %in% conditionCohort$subjectId)}
 
     colnames(eventCohort) <- colnames(cohortData)
@@ -122,11 +122,11 @@ plotRaw_3 <- function(connectionDetails,
   eventAndTarget <- rbind(eventAndTarget,eventAndTarget %>% subset(rowNumber == 1) %>% subset(!subjectId %in% (eventAndTarget %>% subset(rowNumber == 2))$subjectId) %>% mutate(rowNumber = 2, cohortName = "received only first line", nameOfConcept = "2_received only first line")) %>% arrange(subjectId, rowNumber)
 
   rawData <- generateLinksAndNodes(targetData = eventAndTarget,
-                                      minimumCellCount,
-                                      maximumPathLength,
-                                      saveFile,
-                                      outputFolderPath,
-                                      outputFileTitle)
+                                   minimumCellCount,
+                                   maximumPathLength,
+                                   saveFile,
+                                   outputFolderPath,
+                                   outputFileTitle)
 
   # 4. Event incidence in each cycle
   # 5. Event onset timing
@@ -136,11 +136,11 @@ plotRaw_3 <- function(connectionDetails,
 
 #' @export
 generateLinksAndNodes <- function(targetData,
-                                minimumCellCount,
-                                maximumPathLength,
-                                saveFile,
-                                outputFolderPath,
-                                outputFileTitle){
+                                  minimumCellCount,
+                                  maximumPathLength,
+                                  saveFile,
+                                  outputFolderPath,
+                                  outputFileTitle){
 
   # Exclude patients until minimum nodes cell count under criteria
 

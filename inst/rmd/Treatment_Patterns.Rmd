@@ -1,5 +1,5 @@
 ---
-title: "Treatment characterization"
+title: "Treatment Characterization"
 runtime: shiny
 output: 
   flexdashboard::flex_dashboard:
@@ -47,7 +47,8 @@ Column
 ```{r, echo=FALSE}
 
 PathwayVisualizer::plot2(p2_data,
-                         minimumCellCount)
+                         minimumCellCount,
+                         heatmapColor)
 
 
 ```

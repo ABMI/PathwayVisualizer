@@ -59,14 +59,15 @@ plot1 <- function(p1_data,
 # plot2_cycle_heatmap
 #' @export
 plot2 <- function(p2_data,
-                  minimumCellCount){
+                  minimumCellCount,
+                  heatmapColor){
 
   total <- p2_data %>% group_by(cohortName) %>% mutate(sum = sum(n)) %>% select (cohortName,sum)
   total <- unique(total)
   total$label <- paste0(total$cohortName,' \n','(n = ',total$sum,')')
   heatmapPlotData <- p2_data %>% subset(n >= minimumCellCount)
 
-  p2_plot <- heatmapPlotData %>% highcharter::hchart(.,type="heatmap",hcaes(x = cycle,y=cohortName,value = ratio),dataLabels = list(allowOverlap = TRUE, enabled = TRUE,format = '{point.n}<br>{point.value}%'),align ='center') %>% hc_xAxis(title = list(style = list(fontSize = 14)),max = max(heatmapPlotData$cycle), tickInterval = 1,labels = list(style = list(fontSize = 14))) %>% hc_yAxis(title = list(text = 'Regimen',style = list(fontSize = 14)),labels = list(style = list(fontSize = 14))) %>% hc_colorAxis(stops = color_stops(ceiling(max(heatmapPlotData$ratio)),c("white","blue"))) %>% hc_tooltip(pointFormat = "Regimen: {point.y} <br> Cycle: {point.x} <br> Proportion: {point.value}%")
+  p2_plot <- heatmapPlotData %>% highcharter::hchart(.,type="heatmap",hcaes(x = cycle,y=cohortName,value = ratio),dataLabels = list(allowOverlap = TRUE, enabled = TRUE,format = '{point.n}<br>{point.value}%',style = list(fontSize = 14)),align ='center') %>% hc_xAxis(title = list(style = list(fontSize = 18)),max = max(heatmapPlotData$cycle), tickInterval = 1,labels = list(style = list(fontSize = 14))) %>% hc_yAxis(title = list(text = 'Regimen',style = list(fontSize = 18)),labels = list(style = list(fontSize = 18))) %>% hc_colorAxis(stops = color_stops(ceiling(max(heatmapPlotData$ratio)),c("white",heatmapColor))) %>% hc_tooltip(pointFormat = "Regimen: {point.y} <br> Cycle: {point.x} <br> Proportion: {point.value}%")
 
   return(p2_plot)
 }
@@ -78,7 +79,7 @@ plot3 <- function(p3_data){
   nodes <- p3_data$nodes
   links <- p3_data$links
 
-  p3_plot <- networkD3::sankeyNetwork(Links = links, Nodes = nodes, Source = "source",Target = "target", Value = "value", NodeID = "name", fontSize = 20, nodeWidth = 20, LinkGroup = "group",NodeGroup = "group",sinksRight = FALSE, nodePadding = 20, fontFamily = "Times")
+  p3_plot <- networkD3::sankeyNetwork(Links = links, Nodes = nodes, Source = "source",Target = "target", Value = "value", NodeID = "name", fontSize = 20, nodeWidth = 30, NodeGroup = "group",sinksRight = FALSE, nodePadding = 20, fontFamily = "Times")
 
   return(p3_plot)
 }
@@ -120,7 +121,7 @@ plot4 <-  function(p4_data,type = 'histogram'){
       ylim(0,100) + scale_x_reverse(breaks = c(1:max(Percent_labeled$cycle))) + geom_text(aes(x = cycle,y = ratio, label = label), show.legend = FALSE, vjust = 0.2,hjust = -0.05, size = 3.5, position = position_dodge(width=0.6)) + coord_flip() + xlab("Cycle") +
       ylab("")
 
-    p4_plot  <- ggplotly(p2) %>% style(textposition = 'middle right')
+    p4_plot <- ggplotly(p2) %>% style(textposition = 'top right')
 
   }
   return(p4_plot)
@@ -138,11 +139,11 @@ plot5 <- function(p5_data){
   plotdata <- plotdata %>%
     mutate(category = ifelse(dateDiff<1,'d1',ifelse(dateDiff<=7,'d2-d8',ifelse(dateDiff<=14,'d9-d15',ifelse(dateDiff<=21,'d16-d22',ifelse(dateDiff<=29,'-d30','>d30'))))))
 
-  plotdata$category <- factor(plotdata$category,levels = c('d1','d2-d8','d9-d15','d16-d22','-d30','>d30'))
+  plotdata$category <- factor(plotdata$category,levels = c('d1','d2-d8','d9-d15','d16-d22','d23-d30','>d30'))
 
   p <- ggplot(plotdata,aes(x=cohortName, y=dateDiff)) +
     geom_violin(size=0.2,scale = 'width') +
-    ggbeeswarm::geom_quasirandom(size = 1,aes(color = category))+
+    ggbeeswarm::geom_quasirandom(size = 1,aes(color = category))+scale_y_continuous(breaks=c(5,10,15,20,25,30),limits = c(0,30)) +
     scale_colour_Publication() + theme_ipsum() +
     theme(
       legend.position= 'right',legend.title=element_blank()
@@ -151,8 +152,8 @@ plot5 <- function(p5_data){
     xlab("") +
     ylab("Time from discharge (days)")
 
-  p5_plot <- plotly::ggplotly(p)
+  result <- plotly::ggplotly(p)
 
-  return(p5_plot)
+  return(result)
 
 }
