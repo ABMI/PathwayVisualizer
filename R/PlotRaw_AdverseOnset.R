@@ -17,17 +17,17 @@
 #' @import data.table
 #' @import dplyr
 #' @export
-plotRaw_5 <- function(connectionDetails,
-                      cohortDatabaseSchema,
-                      cohortTable,
-                      numberedCohort,
-                      cohortDescript,
-                      eventCohortIds,
-                      treatmentEffectDates = 3,
-                      observationDate = 60,
-                      outputFileTitle,
-                      outputFolderPath,
-                      saveFile = TRUE){
+NeuIncidenceRaw <- function(connectionDetails,
+                         cohortDatabaseSchema,
+                         cohortTable,
+                         numberedCohort,
+                         cohortDescript,
+                         eventCohortIds,
+                         treatmentEffectDates = 3,
+                         observationDate = 60,
+                         outputFileTitle,
+                         outputFolderPath,
+                         saveFile = TRUE){
 
   # 1. Usage pattern graph
   # 2. Treatment Iteration heatmap
